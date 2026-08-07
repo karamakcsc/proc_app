@@ -1,0 +1,16 @@
+[
+ {
+  "doctype": "Role",
+  "name": "Department Manager",
+  "role_name": "Department Manager",
+  "desk_access": 1,
+  "is_custom": 1
+ },
+ {
+  "doctype": "Role",
+  "name": "Department Officer",
+  "role_name": "Department Officer",
+  "desk_access": 1,
+  "is_custom": 1
+ }
+]

@@ -7,6 +7,7 @@ app_license = "mit"
 
 fixtures = [
 	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department"]]]},
+	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer"]]]},
 ]
 
 # Apps
