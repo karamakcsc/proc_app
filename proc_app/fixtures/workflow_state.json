@@ -1,0 +1,65 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.265654",
+  "name": "Pending Requesting-Dept Approval",
+  "style": "",
+  "workflow_state_name": "Pending Requesting-Dept Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.327982",
+  "name": "Pending Concerned-Dept Review",
+  "style": "",
+  "workflow_state_name": "Pending Concerned-Dept Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.333219",
+  "name": "Approved - Issue",
+  "style": "",
+  "workflow_state_name": "Approved - Issue"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.339023",
+  "name": "Pending Concerned-Dept Manager Approval",
+  "style": "",
+  "workflow_state_name": "Pending Concerned-Dept Manager Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.342016",
+  "name": "Pending Procurement Approval",
+  "style": "",
+  "workflow_state_name": "Pending Procurement Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.347251",
+  "name": "Approved - Purchase",
+  "style": "",
+  "workflow_state_name": "Approved - Purchase"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:03:22.531692",
+  "name": "Draft",
+  "style": "",
+  "workflow_state_name": "Draft"
+ }
+]

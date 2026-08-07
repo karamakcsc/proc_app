@@ -1,0 +1,23 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-08-08 01:01:28.456844",
+  "name": "Submit",
+  "workflow_action_name": "Submit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-08-08 01:01:28.528394",
+  "name": "Approve - Issue from Stock",
+  "workflow_action_name": "Approve - Issue from Stock"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-08-08 01:01:28.532528",
+  "name": "Approve - Forward to Purchase",
+  "workflow_action_name": "Approve - Forward to Purchase"
+ }
+]
