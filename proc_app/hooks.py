@@ -7,9 +7,10 @@ app_license = "mit"
 
 fixtures = [
 	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department"]]]},
-	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer"]]]},
+	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase"]]]},
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase"]]]},
+	{"dt": "Workflow", "filters": [["name", "=", "Material Request Approval"]]},
 ]
 
 # Apps
