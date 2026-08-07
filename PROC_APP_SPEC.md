@@ -27,11 +27,11 @@ KCSC Proc is designed to function as a complete, standalone procurement system v
 
 ### 1.3 Status
 
-This app was scaffolded on 2026-08-03 (re-scaffolded from the earlier `karama_proc` under a new name, before any real content existed — see Section 3 below). It currently contains no custom doctypes, fields, or business logic — installation shell only.
+This app was scaffolded on 2026-08-03 (re-scaffolded from the earlier `karama_proc` under a new name, before any real content existed — see Section 4 below). It currently contains no custom doctypes, fields, or business logic — installation shell only.
 
 ### 1.4 Scope (Planned — Not Yet Built)
 
-Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, Notifications Master List — this app's repo, relocated from `SUPPLIER_PORTAL_SPEC.md` on 2026-08-06, see Section 3 below), pending items include:
+Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, Notifications Master List — this app's repo, relocated from `SUPPLIER_PORTAL_SPEC.md` on 2026-08-06, see Section 4 below), pending items include:
 - Purchase Order Amendment (the one confirmed genuine custom-build gap)
 - Migration of `Supplier ASN`, `Supplier ASN Item`, `Supplier Invoice Dispute` doctypes from `supplier_portal`
 - Migration of PO acknowledgment fields and Supplier onboarding fields from `supplier_portal`
@@ -40,7 +40,7 @@ Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, N
 - Procurement and Stock reports (mix of OOB standard reports + custom Query Reports)
 - Roles & Permissions (draft baseline adopted — see `PROC_SUITE_ARCHITECTURE.md` Section 1.6)
 
-The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom log, Notifications Master List, Roles & Permissions) from `SUPPLIER_PORTAL_SPEC.md` into `PROC_SUITE_ARCHITECTURE.md` in this app's repo is complete as of 2026-08-06 — see Section 3 below for the record of that move. All items listed above remain genuinely not started; only the relocation of the planning content itself is done.
+The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom log, Notifications Master List, Roles & Permissions) from `SUPPLIER_PORTAL_SPEC.md` into `PROC_SUITE_ARCHITECTURE.md` in this app's repo is complete as of 2026-08-06 — see Section 4 below for the record of that move. All items listed above remain genuinely not started; only the relocation of the planning content itself is done.
 
 ---
 
@@ -50,7 +50,7 @@ The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom lo
 |---|---|---|
 | 0 — Scaffolding | ✅ Complete (2026-08-03) | App created (as `karama_proc`, then renamed to `proc_app` before any real content existed), installed on site1.local, this spec file initialized |
 | 1 — Doctype Migration | ⬜ Not started | Move ASN, Invoice Dispute doctypes + PO/Supplier custom fields from supplier_portal |
-| 2 — Purchase Requisition & Approval Workflow | ⬜ Not started | Configure Material Request + Frappe Workflow |
+| 2 — Purchase Requisition & Approval Workflow | 🟡 In Progress — design documented, see Section 3. Build not yet started. | Configure Material Request + Frappe Workflow |
 | 3 — Stock Management | ⬜ Not started | Configure Item, Warehouse, Stock Entry, Reorder Tool, Stock Reconciliation |
 | 4 — PO Amendment (custom build) | ⬜ Not started | The one confirmed custom-doctype gap |
 | 5 — Reports | ⬜ Not started | Procurement + Stock reports |
@@ -58,7 +58,48 @@ The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom lo
 
 ---
 
-## 3. Known Issues & Decisions Log
+## 3. Material Request Approval Workflow — Design (Not Yet Built)
+
+### 3.1 Purpose
+
+This documents the design for proc_app's first real feature: a Material Request approval workflow, built entirely on ERPNext v16 OOB capabilities (Material Request doctype + Frappe Workflow engine) plus 4 custom fields. Designed 2026-08-07, based on a real example workflow provided by KCSC, before the client workshop — treated as a standard baseline per the same "adopt now, refine later" principle as Section 1.6 of PROC_SUITE_ARCHITECTURE.md.
+
+### 3.2 Reference Example (source of this design)
+
+A Finance Department employee needs printer ink. They create a Material Request addressed to IT (the department that manages that item type). The Finance Department Manager approves first. Then IT's "person in charge" (Officer) checks stock: if available, it's issued directly from IT's warehouse to Finance; if not, it goes to IT's Manager for approval, then to Procurement's Officer for final approval, before becoming a Purchase Order.
+
+### 3.3 Custom Fields Required
+
+On Material Request:
+- requesting_department (Link to Department) — the department that needs the item, e.g. Finance
+- concerned_department (Link to Department) — the department that manages/reviews that item type, e.g. IT
+
+On Department:
+- department_manager (Link to User) — this department's manager, approves requests where this department is either the requesting or concerned department
+- department_officer (Link to User) — this department's person in charge, reviews stock availability and decides the issue-vs-purchase branch when this department is the concerned department
+
+### 3.4 New Roles Required
+
+- Department Manager — generic role, held by whoever manages any department. Actual approval authority for a specific request is enforced via a Workflow transition condition checking that the acting user matches the relevant department's department_manager field, not by the role alone.
+- Department Officer — same pattern, checked against department_officer.
+- Procurement's final approval reuses the existing draft Procurement Officer role (see PROC_SUITE_ARCHITECTURE.md, Section 1.6) — no new role needed there.
+
+### 3.5 Workflow States & Transitions
+
+Draft, then Submit moves it to Pending Requesting-Department Approval, where the approver is the requesting department's department_manager. Approve moves it to Pending Concerned-Department Review, where the approver is the concerned department's department_officer. From there, two branches: Approve as Issue from Stock moves it directly to Approved – Issue (docstatus: Submitted). Approve as Forward to Purchase moves it to Pending Concerned-Department Manager Approval, where the approver is the concerned department's department_manager; Approve there moves it to Pending Procurement Approval, where the approver holds the Procurement Officer role; Approve there moves it to Approved – Purchase (docstatus: Submitted). A Reject action is available at every approval step and moves the request to Rejected.
+
+Each department-scoped approval uses a Workflow Transition condition (confirmed available on Frappe's Workflow Transition doctype, condition field, Code type) — e.g., a transition is only enabled for the acting user if they match the relevant department's department_manager or department_officer field for the specific department linked on that request. This means the same 2 roles work correctly for every department, without per-department configuration beyond setting the 2 Department fields.
+
+Approved – Issue and Approved – Purchase are both docstatus: Submitted states — at that point, ERPNext's existing native Create actions (confirmed present, no custom code needed) become available: make_stock_entry() for the issue path, make_purchase_order() / make_request_for_quotation() for the purchase path.
+
+### 3.6 Deliberately Deferred (Not Built in This Phase)
+
+- Free-text / not-yet-in-system items: ERPNext's Material Request Item.item_code is mandatory at the Frappe framework level (confirmed via code audit, not just a UI restriction) — allowing a supplier or requester to describe an item that doesn't exist yet in the Item master would require genuine custom code (a flag + description field, plus a script to auto-create the Item record at PO time). This is a real, scoped piece of custom work, deliberately deferred until the core approval workflow is built and proven. Not forgotten — tracked here.
+- Approval value thresholds: still pending the client workshop (see PROC_SUITE_ARCHITECTURE.md, Section 1.6) — this workflow's approvals are role/department-based, not value-based, for now.
+
+---
+
+## 4. Known Issues & Decisions Log
 
 | Date | Type | Description | Decision / Resolution |
 |---|---|---|---|
@@ -69,10 +110,11 @@ The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom lo
 
 ---
 
-## 4. Changelog
+## 5. Changelog
 
 | Version | Date | Author | Summary |
 |---|---|---|---|
+| 0.3 | 2026-08-07 | KCSC | Documented Material Request Approval Workflow design (new Section 3) — custom fields, roles, workflow states/transitions, based on a real example workflow. Confirmed via live ERPNext audit: Material Request has no existing department field, Department has no manager field (both need custom fields), Workflow Transition supports condition-based routing (confirmed viable), native Create actions (Stock Entry, Purchase Order, RFQ) already exist on Material Request. Free-text/not-yet-in-system item support deliberately deferred — confirmed to require genuine custom code (item_code is framework-level mandatory), not just configuration. Design not yet built — this is documentation only. |
 | 0.2 | 2026-08-06 | KCSC | Received the relocated cross-app architecture content (App Boundary & Ownership, OOB-vs-Custom Decision Log, Notifications Master List) from SUPPLIER_PORTAL_SPEC.md Sections 16-18, now living in this repo as PROC_SUITE_ARCHITECTURE.md. Updated Section 1.2 and Section 3 accordingly. |
 | 0.1 | 2026-08-03 | KCSC | App scaffolded as `karama_proc`, then renamed to `proc_app` (App Title: KCSC Proc) before any real content was added. Spec file created/renamed to PROC_APP_SPEC.md accordingly. No functional content yet. |
 
