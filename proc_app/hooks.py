@@ -5,6 +5,10 @@ app_description = "Reusable back-office procurement system — Purchase Requisit
 app_email = "info@kcsc.jo"
 app_license = "mit"
 
+fixtures = [
+	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department"]]]},
+]
+
 # Apps
 # ------------------
 

@@ -1,0 +1,50 @@
+[
+ {
+  "doctype": "Custom Field",
+  "name": "Material Request-requesting_department",
+  "dt": "Material Request",
+  "fieldname": "requesting_department",
+  "fieldtype": "Link",
+  "label": "Requesting Department",
+  "options": "Department",
+  "reqd": 1,
+  "insert_after": "company",
+  "module": "KCSC Proc"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Material Request-concerned_department",
+  "dt": "Material Request",
+  "fieldname": "concerned_department",
+  "fieldtype": "Link",
+  "label": "Concerned Department",
+  "options": "Department",
+  "reqd": 1,
+  "insert_after": "requesting_department",
+  "module": "KCSC Proc"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Department-department_manager",
+  "dt": "Department",
+  "fieldname": "department_manager",
+  "fieldtype": "Link",
+  "label": "Department Manager",
+  "options": "User",
+  "reqd": 0,
+  "insert_after": "department_name",
+  "module": "KCSC Proc"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Department-department_officer",
+  "dt": "Department",
+  "fieldname": "department_officer",
+  "fieldtype": "Link",
+  "label": "Department Officer",
+  "options": "User",
+  "reqd": 0,
+  "insert_after": "department_manager",
+  "module": "KCSC Proc"
+ }
+]
