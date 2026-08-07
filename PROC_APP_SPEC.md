@@ -23,7 +23,7 @@ KCSC Proc is designed to function as a complete, standalone procurement system v
 
 ### 1.2 Relationship to supplier_portal (VendorGate)
 
-`supplier_portal` is a separate, optional companion app that provides supplier self-service UI on top of KCSC Proc. The dependency is one-directional: `supplier_portal` depends on `proc_app`; `proc_app` never depends on `supplier_portal`. Full rationale and the ownership decision log for what belongs in which app is currently documented in `SUPPLIER_PORTAL_SPEC.md`, Section 16 (App Boundary & Ownership) — this content is planned to be relocated to a future `PROC_SUITE_ARCHITECTURE.md` (to live in this app's repo) as its own future task, not yet done.
+`supplier_portal` is a separate, optional companion app that provides supplier self-service UI on top of KCSC Proc. The dependency is one-directional: `supplier_portal` depends on `proc_app`; `proc_app` never depends on `supplier_portal`. Full rationale and the ownership decision log for what belongs in which app is documented in `PROC_SUITE_ARCHITECTURE.md` (this app's repo), Section 1 (App Boundary & Ownership) — this content was originally written into `SUPPLIER_PORTAL_SPEC.md` Section 16 during Phase 2 of the supplier_portal project, then relocated here on 2026-08-06.
 
 ### 1.3 Status
 
@@ -31,16 +31,16 @@ This app was scaffolded on 2026-08-03 (re-scaffolded from the earlier `karama_pr
 
 ### 1.4 Scope (Planned — Not Yet Built)
 
-Per `SUPPLIER_PORTAL_SPEC.md` Sections 17 and 18 (OOB-vs-Custom Decision Log, Notifications Master List), pending items include:
+Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, Notifications Master List — this app's repo, relocated from `SUPPLIER_PORTAL_SPEC.md` on 2026-08-06, see Section 3 below), pending items include:
 - Purchase Order Amendment (the one confirmed genuine custom-build gap)
 - Migration of `Supplier ASN`, `Supplier ASN Item`, `Supplier Invoice Dispute` doctypes from `supplier_portal`
 - Migration of PO acknowledgment fields and Supplier onboarding fields from `supplier_portal`
 - Purchase Requisition + approval workflow (OOB via Material Request + Frappe Workflow)
 - Stock Management (OOB — Item, Warehouse, Stock Entry, Reorder Tool, Stock Reconciliation)
 - Procurement and Stock reports (mix of OOB standard reports + custom Query Reports)
-- Roles & Permissions (draft baseline adopted — see `SUPPLIER_PORTAL_SPEC.md` Section 16.6)
+- Roles & Permissions (draft baseline adopted — see `PROC_SUITE_ARCHITECTURE.md` Section 1.6)
 
-Also planned, not yet started: relocating cross-app architecture content (App Boundary, OOB-vs-Custom log, Notifications Master List, Roles & Permissions) from `SUPPLIER_PORTAL_SPEC.md` into a new `PROC_SUITE_ARCHITECTURE.md` in this app's repo — see Section 3 below.
+The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom log, Notifications Master List, Roles & Permissions) from `SUPPLIER_PORTAL_SPEC.md` into `PROC_SUITE_ARCHITECTURE.md` in this app's repo is complete as of 2026-08-06 — see Section 3 below for the record of that move. All items listed above remain genuinely not started; only the relocation of the planning content itself is done.
 
 ---
 
@@ -65,6 +65,7 @@ Also planned, not yet started: relocating cross-app architecture content (App Bo
 | 2026-08-03 | Scaffolding | App created as `karama_proc` | `bench new-app karama_proc`, installed on site1.local. No custom code yet. |
 | 2026-08-03 | Rename | Renamed `karama_proc` → `proc_app` (App Title: KCSC Proc) | Decided before any real content was added. Since the app was still an empty shell, executed as uninstall + folder removal + fresh `bench new-app proc_app`, rather than an in-place rename — avoids any risk of leftover references. |
 | 2026-08-03 | Planned | Future task: split cross-app architecture content into `PROC_SUITE_ARCHITECTURE.md` | Sections 16-18 of `SUPPLIER_PORTAL_SPEC.md` (App Boundary & Ownership, OOB-vs-Custom Decision Log, Notifications Master List, Roles & Permissions) will be relocated to a new `PROC_SUITE_ARCHITECTURE.md` living in this app's repo. Decided to do this before Phase 1 (doctype migration) begins, not after. Not yet started. |
+| 2026-08-06 | Complete | Cross-app architecture content relocated to `PROC_SUITE_ARCHITECTURE.md` | The task planned on 2026-08-03 (row above) is done. Old Sections 16-18 of `SUPPLIER_PORTAL_SPEC.md` were moved into this app's repo as `PROC_SUITE_ARCHITECTURE.md`, renumbered as Sections 1-3 there. All internal cross-references within the moved content were renumbered to match; 8 external cross-references remaining in `SUPPLIER_PORTAL_SPEC.md` were updated to point at the new location. Completed before Phase 1 (doctype migration) began, as planned. |
 
 ---
 
@@ -72,6 +73,7 @@ Also planned, not yet started: relocating cross-app architecture content (App Bo
 
 | Version | Date | Author | Summary |
 |---|---|---|---|
+| 0.2 | 2026-08-06 | KCSC | Received the relocated cross-app architecture content (App Boundary & Ownership, OOB-vs-Custom Decision Log, Notifications Master List) from SUPPLIER_PORTAL_SPEC.md Sections 16-18, now living in this repo as PROC_SUITE_ARCHITECTURE.md. Updated Section 1.2 and Section 3 accordingly. |
 | 0.1 | 2026-08-03 | KCSC | App scaffolded as `karama_proc`, then renamed to `proc_app` (App Title: KCSC Proc) before any real content was added. Spec file created/renamed to PROC_APP_SPEC.md accordingly. No functional content yet. |
 
 ---
