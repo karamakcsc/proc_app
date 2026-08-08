@@ -11,7 +11,7 @@ ROLE_PERMS = [
 	("Procurement Officer", 1, 1, 0, 1),
 ]
 
-SUPPORTING_DOCTYPES = ["Item", "Item Group", "UOM", "Warehouse", "Brand"]
+SUPPORTING_DOCTYPES = ["Item", "Item Group", "UOM", "Warehouse", "Brand", "Company", "Department"]
 SUPPORTING_ROLES = ["Department User", "Department Manager", "Department Officer", "Procurement Officer"]
 
 
