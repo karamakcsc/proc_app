@@ -5,6 +5,8 @@ app_description = "Reusable back-office procurement system — Purchase Requisit
 app_email = "info@kcsc.jo"
 app_license = "mit"
 
+after_migrate = "proc_app.setup.after_migrate"
+
 fixtures = [
 	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department"]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
