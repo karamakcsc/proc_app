@@ -12,15 +12,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-08-08 01:01:23.327982",
-  "name": "Pending Concerned-Dept Review",
-  "style": "",
-  "workflow_state_name": "Pending Concerned-Dept Review"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2026-08-08 01:01:23.333219",
   "name": "Approved - Issue",
   "style": "",
@@ -61,5 +52,14 @@
   "name": "Draft",
   "style": "",
   "workflow_state_name": "Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.327982",
+  "name": "Pending Concerned-Dept Review",
+  "style": "",
+  "workflow_state_name": "Pending Concerned-Dept Review"
  }
 ]

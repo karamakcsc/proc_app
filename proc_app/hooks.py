@@ -15,6 +15,12 @@ fixtures = [
 	{"dt": "Workflow", "filters": [["name", "=", "Material Request Approval"]]},
 ]
 
+doc_events = {
+	"Material Request": {
+		"on_update": "proc_app.material_request_hooks.on_material_request_update",
+	},
+}
+
 # Apps
 # ------------------
 
