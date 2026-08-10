@@ -2,8 +2,8 @@
 
 ---
 
-> **Document Status:** `DRAFT v1.2`
-> **Last Updated:** 2026-08-10
+> **Document Status:** `DRAFT v1.3`
+> **Last Updated:** 2026-08-11
 > **Maintained by:** KCSC — Karama Computer Services Company
 > **Scope:** Cross-app architecture decisions spanning `supplier_portal` (VendorGate) and `proc_app` (KCSC Proc). This document does NOT describe either app's internal implementation details — see SUPPLIER_PORTAL_SPEC.md and PROC_APP_SPEC.md respectively for those.
 > **Origin:** This content was originally written directly into SUPPLIER_PORTAL_SPEC.md (as Sections 16-18) during Phase 2 of the supplier_portal project, then relocated here on 2026-08-06 once proc_app existed, to avoid burying cross-app decisions inside a single app's spec. Full history of when each decision was made is preserved in SUPPLIER_PORTAL_SPEC.md's Changelog (Section 14, entries v5.1-v5.3) — this document does not duplicate that history, only the living content.
@@ -181,7 +181,7 @@ All notification ownership (which app owns which notification definition) follow
 
 A third companion app will be built: an internal self-service portal for bank staff, following the exact same architectural relationship already established for supplier_portal — a UI-only app that depends on proc_app, never the reverse. This is a deliberate application of the App Boundary principle (Section 1) to a second audience.
 
-proc_app is the core logic layer (doctypes, roles, workflow, permissions). supplier_portal depends on it and is external-facing, for suppliers, branded VendorGate. A new internal portal (name not yet decided) will also depend on proc_app, and will be internal-facing, for bank staff, with its own branding not yet decided.
+proc_app is the core logic layer (doctypes, roles, workflow, permissions). supplier_portal depends on it and is external-facing, for suppliers, branded VendorGate. `proc_portal` (title: "Proc Portal") will also depend on proc_app, and will be internal-facing, for bank staff, with its own branding not yet decided.
 
 ### 4.2 Vision and Scope Ambition
 
@@ -210,7 +210,7 @@ Beyond usability, this is a deliberate branding and product-identity decision: a
 
 ### 4.6 Status
 
-Decision made, not yet built. Open items requiring a decision before build begins: app name (technical + brand name — learn from the earlier "name TBD" mistake documented in this project's history; do not leave this placeholder stale once a name is chosen), and the scope/order of the first screens to build. Recommended starting point (not yet confirmed): Material Request creation and approval, since the underlying workflow is already fully built and tested in proc_app as of 2026-08-09.
+Decision made, not yet built. App named 2026-08-11: proc_portal (App Title: "Proc Portal" — working title, real brand identity to be decided later, consistent with the strategic product-identity goal in Section 4.3). Remaining open item before build begins: scope/order of the first screens to build. Recommended starting point (not yet confirmed): Material Request creation and approval, since the underlying workflow is already fully built and tested in proc_app as of 2026-08-09.
 
 ---
 
