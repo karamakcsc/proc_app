@@ -2,8 +2,8 @@
 
 ---
 
-> **Document Status:** `DRAFT v1.1`
-> **Last Updated:** 2026-08-07
+> **Document Status:** `DRAFT v1.2`
+> **Last Updated:** 2026-08-10
 > **Maintained by:** KCSC — Karama Computer Services Company
 > **Scope:** Cross-app architecture decisions spanning `supplier_portal` (VendorGate) and `proc_app` (KCSC Proc). This document does NOT describe either app's internal implementation details — see SUPPLIER_PORTAL_SPEC.md and PROC_APP_SPEC.md respectively for those.
 > **Origin:** This content was originally written directly into SUPPLIER_PORTAL_SPEC.md (as Sections 16-18) during Phase 2 of the supplier_portal project, then relocated here on 2026-08-06 once proc_app existed, to avoid burying cross-app decisions inside a single app's spec. Full history of when each decision was made is preserved in SUPPLIER_PORTAL_SPEC.md's Changelog (Section 14, entries v5.1-v5.3) — this document does not duplicate that history, only the living content.
@@ -172,6 +172,45 @@ The Solution Description Document specifies 21 notification events across the fu
 - **6 of the net-new events** (#18–21, and arguably #2) may be partially or fully satisfiable by Frappe/ERPNext's own native scheduler, Workflow engine, or Reorder Tool notification hooks rather than requiring fully custom notification logic — this should be checked during Phase 3 build, following the same OOB-first discipline as Section 2, rather than assumed to need custom code.
 
 All notification ownership (which app owns which notification definition) follows the same App Boundary logic as Section 1: notifications tied to internal procurement events (##2, 3, 5, 6, 8, 9, 10, 13, 14, 15, 18, 19, 20, 21) belong in `proc_app`; notifications specifically about the supplier's portal experience may still originate from procurement-app events but should not hardcode portal URLs unless supplier_portal is confirmed installed (same caveat as Section 1.4).
+
+---
+
+## 4. Internal Self-Service Portal — Strategic Decision (2026-08-10, Not Yet Built)
+
+### 4.1 Decision
+
+A third companion app will be built: an internal self-service portal for bank staff, following the exact same architectural relationship already established for supplier_portal — a UI-only app that depends on proc_app, never the reverse. This is a deliberate application of the App Boundary principle (Section 1) to a second audience.
+
+proc_app is the core logic layer (doctypes, roles, workflow, permissions). supplier_portal depends on it and is external-facing, for suppliers, branded VendorGate. A new internal portal (name not yet decided) will also depend on proc_app, and will be internal-facing, for bank staff, with its own branding not yet decided.
+
+### 4.2 Vision and Scope Ambition
+
+Unlike a narrow single-task add-on, this portal is intended to be comprehensive enough to cover most bank-user tasks across the procurement lifecycle — not just requisition creation, but the full range of actions a bank employee would otherwise need desk access for, including approval actions. This means Department Manager, Department Officer, and Procurement Officer approvals (currently only exercised via the ERPNext desk's native Workflow buttons) are expected to eventually be performed through this portal too, not just by requesters creating new documents.
+
+The ERPNext desk interface remains available in parallel, for genuinely power users who want full platform flexibility. This is not a replacement of desk access — it is establishing the portal as the default experience for most users, including managers, while desk access remains an option for those who prefer or need it.
+
+### 4.3 Strategic Rationale — Product Identity
+
+Beyond usability, this is a deliberate branding and product-identity decision: a well-designed, KCSC-branded portal gives the overall system its own identity, distinct from "an ERPNext deployment." This mirrors the same reasoning that shaped VendorGate's branding for supplier_portal — the portal becomes the face of the product that most users actually experience, while the underlying ERPNext/Frappe platform remains largely invisible to them.
+
+### 4.4 Architectural Principles (carried forward from Section 1 and PROC_APP_SPEC.md's established patterns)
+
+- Thin client over proc_app, never a reimplementation: the portal must call the same underlying mechanisms already proven in proc_app — apply_workflow() for approval actions, the same permission model, the same doctypes — rather than reimplementing business rules in the portal layer. This is the same discipline supplier_portal already follows.
+- Role/permission work does not disappear, it relocates: the portal still requires correct DocPerm scoping underneath every action it exposes, same as the desk does. Custom API endpoints (matching supplier_portal's api/ pattern) allow enforcing intended business rules precisely, which can arguably be safer than generic desk-level permission checks.
+- Feature scope is a living, explicit decision, not implicit: whatever is not yet exposed in the portal remains accessible only via the desk. This must be tracked explicitly (a living scope list) rather than assumed complete, to avoid users hitting silent walls.
+
+### 4.5 Known Risks (assessed 2026-08-10, none blocking, all requiring ongoing attention)
+
+| Risk | Mitigation |
+|---|---|
+| Feature drift — portal not covering something the desk does | Maintain an explicit, living "portal scope" list; review each time proc_app's workflow or doctypes change |
+| Workflow changes need portal updates too (desk reflects Frappe Workflow automatically; a custom portal does not) | Portal must call the same apply_workflow() mechanism, never hardcode state/transition logic independently |
+| Build effort is substantial — the single Material Request workflow alone took a full session with multiple real discoveries | Phase the build: start with the highest-value, already-proven flow (Material Request) before expanding to Purchase Orders, balance-checking, etc. |
+| Two UIs (desk + portal) performing the same approval actions could diverge in behavior if not both routed through the same underlying mechanism | Enforced by the "thin client" principle in 4.4 — both UIs are just different front doors onto the same proc_app logic |
+
+### 4.6 Status
+
+Decision made, not yet built. Open items requiring a decision before build begins: app name (technical + brand name — learn from the earlier "name TBD" mistake documented in this project's history; do not leave this placeholder stale once a name is chosen), and the scope/order of the first screens to build. Recommended starting point (not yet confirmed): Material Request creation and approval, since the underlying workflow is already fully built and tested in proc_app as of 2026-08-09.
 
 ---
 
