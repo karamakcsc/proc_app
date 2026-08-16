@@ -1,0 +1,23 @@
+{
+  "name": "Supplier ASN",
+  "doctype": "DocType",
+  "module": "Proc App",
+  "autoname": "naming_series:",
+  "naming_series": "ASN-.YYYY.-",
+  "is_submittable": 0,
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "naming_series", "fieldtype": "Select", "label": "Series", "options": "ASN-.YYYY.-"},
+    {"fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "label": "Purchase Order", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "label": "Supplier", "reqd": 1},
+    {"fieldname": "expected_delivery_date", "fieldtype": "Date", "label": "Expected Delivery Date", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "shipment_reference", "fieldtype": "Data", "label": "Shipment/Tracking Reference"},
+    {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes"},
+    {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Draft\nShipped\nDelivered\nCancelled", "default": "Draft", "in_list_view": 1},
+    {"fieldname": "items", "fieldtype": "Table", "label": "Items", "options": "Supplier ASN Item"}
+  ],
+  "permissions": [
+    {"role": "Supplier Portal User", "read": 1, "write": 1, "create": 1},
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1}
+  ]
+}
