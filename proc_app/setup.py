@@ -18,6 +18,7 @@ SUPPORTING_ROLES = ["Department User", "Department Manager", "Department Officer
 def after_migrate():
 	setup_material_request_permissions()
 	setup_supporting_doctype_permissions()
+	setup_po_amendment_permissions()
 
 
 def setup_material_request_permissions():
@@ -83,3 +84,36 @@ def setup_supporting_doctype_permissions():
 	frappe.logger().info(
 		"KCSC Proc: read-only DocPerm records configured on 5 supporting doctypes for 4 roles."
 	)
+
+
+def setup_po_amendment_permissions():
+	doctype = "Purchase Order Amendment"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_po_amendment_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_po_amendment_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	# Remove any existing Custom DocPerm for this role to avoid duplicates on re-run
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+		("submit", 1),
+	]:
+		update_permission_property(doctype, role, 0, ptype, value)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Purchase Order Amendment DocPerm configured for Procurement Officer.")
