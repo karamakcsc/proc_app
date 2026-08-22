@@ -248,4 +248,14 @@ Multiple plausible-sounding hypotheses (bookmark parameters, login-page content,
 
 ---
 
+## 6. Mobile Interface — Standing Requirement (Added 2026-08-23, Not Yet Addressed)
+
+Yasser has requested that mobile interface be taken into consideration in all coming sessions, for both `proc_portal` and `supplier_portal`. Current honest state: neither portal has been built or tested with mobile in mind. Both use fixed-width sidebars, CSS Grid multi-column layouts, and desktop-oriented form structures (e.g., New Request's Company/Department/date-range grids, the filter bar's 6-column layout) that have not been verified on small screens and likely need real rework, not just minor CSS tweaks, to work well on mobile.
+
+**Instruction for future sessions:** when building or modifying any portal screen going forward, consider mobile responsiveness as part of the work, not an afterthought — and flag to Yasser when a design decision has real mobile-usability tradeoffs, so it can be decided deliberately rather than defaulted into.
+
+**Not yet started:** a proper mobile audit of existing screens (which specifically breaks/feels bad on a real small viewport) has not been done. This should likely be an early task whenever mobile work begins, rather than guessing which parts need fixing.
+
+---
+
 *This document is the source of truth for cross-app architecture decisions in the KCSC procurement suite. See SUPPLIER_PORTAL_SPEC.md and PROC_APP_SPEC.md for app-specific implementation details.*
