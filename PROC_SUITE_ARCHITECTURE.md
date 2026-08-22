@@ -214,4 +214,34 @@ Decision made, not yet built. App named 2026-08-11: proc_portal (App Title: "Pro
 
 ---
 
+## 5. Known Issue — Login Redirect Only Works on the Login Request Itself (Found 2026-08-22, Not Yet Fixed)
+
+### 5.1 Symptom
+
+`requester.test` logged in fresh and still landed on the desk instead of `/proc-portal`, despite the `on_login`-based redirect fix (see `PROC_PORTAL_SPEC.md` Section 3) having been built, tested, and confirmed working via real HTTP login tests in an earlier session.
+
+### 5.2 Investigation — Hypotheses Tested and Ruled Out
+
+Each of the following was tested directly against real HTTP requests/live data before being ruled out, rather than assumed:
+
+- **Bookmark/`redirect-to` query parameter** taking priority over the `on_login` flag — refuted. An unauthenticated visit to the bare domain root produces no redirect at all (`200`, no `Location` header, no redirect history); the login page is rendered directly at `/` with a clean URL.
+- **A hidden field or embedded JS variable in the login page defaulting a redirect target to `/app`** — refuted. A full-text search of the rendered login page HTML for `redirect`, `redirect_to`, `redirect_location`, and `"app"` found zero matches.
+- **Stale running web-server processes from an incomplete restart** (e.g. after Yasser's laptop reboot) — refuted. The process bound to port 8000 that's actually serving requests is Werkzeug's reloader *child*, which restarts automatically on every `.py` file change; it was confirmed fresh (started one second after the most recent `.py` edit in the session, well after `hooks.py`'s last real change). No process restart was needed or performed to resolve this investigation.
+
+### 5.3 Actual Root Cause — Confirmed via Source
+
+The `on_login` hook (`proc_portal.before_request.redirect_portal_users`) sets `frappe.local.flags.home_page`, which is consulted by `frappe.website.utils.get_home_page()` — **but that flag is request-scoped**. It only exists for the lifetime of the login POST request itself. Any subsequent, separate request to `/` (a fresh page load, a reload, or the browser's own top-level navigation landing back on `/` rather than following the login response's `home_page` value directly) starts a new request where the flag is empty, and `get_home_page()` falls through its own independent chain instead: `Role.home_page` → `Portal Settings.default_portal_home` → hook-based overrides (`get_website_user_home_page`, `website_user_home_page`, `role_home_page`, `home_page`) → `Website Settings.home_page` → default `"me"`, which is hard-coded to `"desk"` for any `System User` with no `default_workspace` set. **`User.default_app` — the field `on_login` actually keys off — is never read anywhere in this fallback chain.**
+
+Traced with real data for `requester.test` (`user_type: System User`, roles `Department User`/`All`/`Guest`/`Desk User`, none with `Role.home_page` set, no matching hooks registered, no `default_workspace`): this chain resolves to `"desk"` deterministically, every time, for any request to `/` other than the login POST itself.
+
+### 5.4 Status
+
+**Not yet fixed.** The `on_login` mechanism correctly steers the login action's own response, but provides no coverage for any later, independent visit to the bare root — which appears to be the actual path a real browser takes after login in at least some cases. A real fix needs a mechanism that survives past the single login request (e.g. a `Role.home_page` value, a `Portal Settings.default_portal_home` value, or a `get_website_user_home_page` hook implementation) rather than relying solely on `frappe.local.flags.home_page`. Same underlying gap likely affects `supplier_portal`'s equivalent `on_login` hook (`supplier_portal.on_login.redirect_portal_users`) — not yet investigated there, but sharing the identical mechanism and therefore worth checking before considering this closed for either app.
+
+### 5.5 Process Lesson
+
+Multiple plausible-sounding hypotheses (bookmark parameters, login-page content, stale processes) were tested and refuted via real requests/data before the actual root cause was found by reading `frappe/website/utils.py`'s `get_home_page()` directly — confirming the project's standing practice of verifying against real code and live behavior rather than accepting a plausible-sounding theory (including "it must be a stale process after a restart," which felt intuitive but did not hold up under direct process-timing evidence).
+
+---
+
 *This document is the source of truth for cross-app architecture decisions in the KCSC procurement suite. See SUPPLIER_PORTAL_SPEC.md and PROC_APP_SPEC.md for app-specific implementation details.*
