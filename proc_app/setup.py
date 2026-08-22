@@ -19,6 +19,7 @@ def after_migrate():
 	setup_material_request_permissions()
 	setup_supporting_doctype_permissions()
 	setup_po_amendment_permissions()
+	setup_stock_settings_permission()
 
 
 def setup_material_request_permissions():
@@ -117,3 +118,30 @@ def setup_po_amendment_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Purchase Order Amendment DocPerm configured for Procurement Officer.")
+
+
+def setup_stock_settings_permission():
+	doctype = "Stock Settings"
+	role = "Department Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_stock_settings_permission: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_stock_settings_permission: Role '{role}' not found, skipping"
+		)
+		return
+
+	# Remove any existing Custom DocPerm for this role to avoid duplicates on re-run
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	update_permission_property(doctype, role, 0, "read", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Stock Settings read permission configured for Department Officer.")
