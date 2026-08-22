@@ -115,6 +115,12 @@ def setup_po_amendment_permissions():
 	]:
 		update_permission_property(doctype, role, 0, ptype, value)
 
+	# Procurement Officer also needs read access to Purchase Order itself,
+	# to select it on the PO Amendment form's link field.
+	if not frappe.db.exists("Custom DocPerm", {"parent": "Purchase Order", "role": "Procurement Officer"}):
+		add_permission("Purchase Order", "Procurement Officer", 0)
+		update_permission_property("Purchase Order", "Procurement Officer", 0, "read", 1)
+
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Purchase Order Amendment DocPerm configured for Procurement Officer.")
