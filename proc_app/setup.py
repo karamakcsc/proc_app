@@ -20,6 +20,7 @@ def after_migrate():
 	setup_supporting_doctype_permissions()
 	setup_po_amendment_permissions()
 	setup_stock_settings_permission()
+	setup_rfq_permissions()
 
 
 def setup_material_request_permissions():
@@ -151,3 +152,42 @@ def setup_stock_settings_permission():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Stock Settings read permission configured for Department Officer.")
+
+
+def setup_rfq_permissions():
+	doctype = "Request for Quotation"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_rfq_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_rfq_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	# Remove any existing Custom DocPerm for this role to avoid duplicates on re-run
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+		("submit", 1),
+	]:
+		update_permission_property(doctype, role, 0, ptype, value)
+
+	# Procurement Officer also needs read access to Supplier itself,
+	# to select suppliers on the RFQ form's suppliers child table.
+	if not frappe.db.exists("Custom DocPerm", {"parent": "Supplier", "role": "Procurement Officer"}):
+		add_permission("Supplier", "Procurement Officer", 0)
+		update_permission_property("Supplier", "Procurement Officer", 0, "read", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Request for Quotation DocPerm configured for Procurement Officer.")

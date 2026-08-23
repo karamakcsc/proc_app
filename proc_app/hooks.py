@@ -9,11 +9,11 @@ after_migrate = "proc_app.setup.after_migrate"
 
 fixtures = [
 	{"dt": "DocType", "filters": [["name", "=", "Purchase Order Amendment"]]},
-	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department", "Purchase Order", "Supplier"]]]},
+	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department", "Purchase Order", "Supplier", "Request for Quotation"]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval"]]]},
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase"]]]},
-	{"dt": "Workflow", "filters": [["name", "in", ["Material Request Approval", "Purchase Order Amendment Approval"]]]},
+	{"dt": "Workflow", "filters": [["name", "in", ["Material Request Approval", "Purchase Order Amendment Approval", "RFQ Approval"]]]},
 ]
 
 doc_events = {
