@@ -21,6 +21,7 @@ def after_migrate():
 	setup_po_amendment_permissions()
 	setup_stock_settings_permission()
 	setup_rfq_permissions()
+	setup_report_permissions()
 
 
 def setup_material_request_permissions():
@@ -191,3 +192,31 @@ def setup_rfq_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Request for Quotation DocPerm configured for Procurement Officer.")
+
+
+def setup_report_permissions():
+	"""Query Reports check frappe.has_permission(ref_doctype, "report") — a distinct
+	permission type from read/write/create/submit, confirmed via frappe/desk/query_report.py.
+	Procurement Officer already has read=1 on Material Request but not report=1,
+	so "Purchase Requisition Status" would otherwise raise a PermissionError on run,
+	despite the role genuinely being able to read the underlying doctype."""
+	doctype = "Material Request"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_report_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_report_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	update_permission_property(doctype, role, 0, "report", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Material Request 'report' permission configured for Procurement Officer.")

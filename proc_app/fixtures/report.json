@@ -1,0 +1,55 @@
+[
+ {
+  "add_total_row": 0,
+  "add_translate_data": 0,
+  "columns": [],
+  "disable_prepared_report_automation": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Report",
+  "doctype_to_sync": [],
+  "filters": [],
+  "is_standard": "No",
+  "javascript": null,
+  "json": null,
+  "letter_head": "Company Letterhead - Grey",
+  "modified": "2026-08-25 01:24:43.680705",
+  "module": "Buying",
+  "name": "Purchase Requisition Status",
+  "prepared_report": 0,
+  "query": "\n        SELECT\n            mr.name as \"Requisition:Link/Material Request:150\",\n            mr.transaction_date as \"Date:Date:100\",\n            mr.owner as \"Requester:Link/User:150\",\n            mr.requesting_department as \"Requesting Department:Link/Department:150\",\n            mr.concerned_department as \"Concerned Department:Link/Department:150\",\n            mr.workflow_state as \"Approval Stage:Data:180\",\n            mr.material_request_type as \"Type:Data:100\",\n            SUM(mri.qty) as \"Total Qty:Float:100\",\n            SUM(mri.amount) as \"Estimated Value:Currency:130\"\n        FROM `tabMaterial Request` mr\n        LEFT JOIN `tabMaterial Request Item` mri ON mri.parent = mr.name\n        WHERE mr.docstatus != 2\n        GROUP BY mr.name\n        ORDER BY mr.creation DESC\n    ",
+  "ref_doctype": "Material Request",
+  "reference_report": null,
+  "report_name": "Purchase Requisition Status",
+  "report_script": null,
+  "report_type": "Query Report",
+  "roles": [
+   {
+    "role": "Stock Manager"
+   },
+   {
+    "role": "Stock User"
+   },
+   {
+    "role": "Purchase User"
+   },
+   {
+    "role": "Purchase Manager"
+   },
+   {
+    "role": "Department User"
+   },
+   {
+    "role": "Department Manager"
+   },
+   {
+    "role": "Department Officer"
+   },
+   {
+    "role": "Procurement Officer"
+   }
+  ],
+  "snapshot_report": 0,
+  "timeout": 0
+ }
+]
