@@ -51,5 +51,76 @@
   ],
   "snapshot_report": 0,
   "timeout": 0
+ },
+ {
+  "add_total_row": 0,
+  "add_translate_data": 0,
+  "columns": [],
+  "disable_prepared_report_automation": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Report",
+  "doctype_to_sync": [],
+  "filters": [],
+  "is_standard": "No",
+  "javascript": null,
+  "json": null,
+  "letter_head": "Company Letterhead - Grey",
+  "modified": "2026-08-25 01:40:04.837677",
+  "module": "Stock",
+  "name": "Items Below Reorder Level",
+  "prepared_report": 0,
+  "query": "\n        SELECT\n            ir.parent as \"Item:Link/Item:150\",\n            i.item_name as \"Item Name:Data:200\",\n            ir.warehouse as \"Warehouse:Link/Warehouse:150\",\n            COALESCE(b.actual_qty, 0) as \"Current Stock:Float:120\",\n            COALESCE(b.projected_qty, 0) as \"Projected Qty:Float:120\",\n            ir.warehouse_reorder_level as \"Reorder Level:Float:120\",\n            ir.warehouse_reorder_qty as \"Suggested Reorder Qty:Float:150\"\n        FROM `tabItem Reorder` ir\n        JOIN `tabItem` i ON i.name = ir.parent\n        LEFT JOIN `tabBin` b ON b.item_code = ir.parent AND b.warehouse = ir.warehouse\n        WHERE i.disabled = 0\n        AND ir.warehouse_reorder_level > 0\n        AND COALESCE(b.projected_qty, 0) <= ir.warehouse_reorder_level\n        ORDER BY ir.parent\n    ",
+  "ref_doctype": "Item",
+  "reference_report": null,
+  "report_name": "Items Below Reorder Level",
+  "report_script": null,
+  "report_type": "Query Report",
+  "roles": [
+   {
+    "role": "Maintenance User"
+   },
+   {
+    "role": "Accounts User"
+   },
+   {
+    "role": "Stock User"
+   },
+   {
+    "role": "Item Manager"
+   },
+   {
+    "role": "Desk User"
+   },
+   {
+    "role": "Stock Manager"
+   },
+   {
+    "role": "Manufacturing User"
+   },
+   {
+    "role": "Purchase User"
+   },
+   {
+    "role": "Sales User"
+   },
+   {
+    "role": "Supplier Portal User"
+   },
+   {
+    "role": "Department User"
+   },
+   {
+    "role": "Department Manager"
+   },
+   {
+    "role": "Department Officer"
+   },
+   {
+    "role": "Procurement Officer"
+   }
+  ],
+  "snapshot_report": 0,
+  "timeout": 0
  }
 ]

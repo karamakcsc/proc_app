@@ -199,24 +199,31 @@ def setup_report_permissions():
 	permission type from read/write/create/submit, confirmed via frappe/desk/query_report.py.
 	Procurement Officer already has read=1 on Material Request but not report=1,
 	so "Purchase Requisition Status" would otherwise raise a PermissionError on run,
-	despite the role genuinely being able to read the underlying doctype."""
-	doctype = "Material Request"
-	role = "Procurement Officer"
+	despite the role genuinely being able to read the underlying doctype. Same gap
+	applies to "Items Below Reorder Level" (ref_doctype Item) for Department Officer
+	and Procurement Officer — both already have read=1 on Item via SUPPORTING_DOCTYPES,
+	just not report=1."""
+	grants = [
+		("Material Request", "Procurement Officer"),
+		("Item", "Department Officer"),
+		("Item", "Procurement Officer"),
+	]
 
-	if not frappe.db.exists("DocType", doctype):
-		frappe.logger().warning(
-			f"setup_report_permissions: DocType '{doctype}' not found, skipping"
-		)
-		return
+	for doctype, role in grants:
+		if not frappe.db.exists("DocType", doctype):
+			frappe.logger().warning(
+				f"setup_report_permissions: DocType '{doctype}' not found, skipping"
+			)
+			continue
 
-	if not frappe.db.exists("Role", role):
-		frappe.logger().warning(
-			f"setup_report_permissions: Role '{role}' not found, skipping"
-		)
-		return
+		if not frappe.db.exists("Role", role):
+			frappe.logger().warning(
+				f"setup_report_permissions: Role '{role}' not found, skipping"
+			)
+			continue
 
-	update_permission_property(doctype, role, 0, "report", 1)
+		update_permission_property(doctype, role, 0, "report", 1)
 
 	frappe.db.commit()
 	frappe.clear_cache()
-	frappe.logger().info("KCSC Proc: Material Request 'report' permission configured for Procurement Officer.")
+	frappe.logger().info("KCSC Proc: 'report' permission configured for Material Request/Item.")
