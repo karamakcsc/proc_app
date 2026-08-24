@@ -122,5 +122,43 @@
   ],
   "snapshot_report": 0,
   "timeout": 0
+ },
+ {
+  "add_total_row": 0,
+  "add_translate_data": 0,
+  "columns": [],
+  "disable_prepared_report_automation": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Report",
+  "doctype_to_sync": [],
+  "filters": [],
+  "is_standard": "No",
+  "javascript": null,
+  "json": null,
+  "letter_head": "Company Letterhead - Grey",
+  "modified": "2026-08-25 01:56:11.903356",
+  "module": "Stock",
+  "name": "Physical Count Variance",
+  "prepared_report": 0,
+  "query": "\n        SELECT\n            sr.name as \"Reconciliation:Link/Stock Reconciliation:150\",\n            sr.posting_date as \"Date:Date:100\",\n            sri.item_code as \"Item:Link/Item:150\",\n            sri.warehouse as \"Warehouse:Link/Warehouse:150\",\n            sri.current_qty as \"System Qty:Float:100\",\n            sri.qty as \"Counted Qty:Float:100\",\n            sri.quantity_difference as \"Qty Variance:Float:100\",\n            sri.amount_difference as \"Value Variance:Currency:120\"\n        FROM `tabStock Reconciliation` sr\n        JOIN `tabStock Reconciliation Item` sri ON sri.parent = sr.name\n        WHERE sr.docstatus = 1\n        AND sri.quantity_difference != 0\n        ORDER BY sr.posting_date DESC\n    ",
+  "ref_doctype": "Stock Reconciliation",
+  "reference_report": null,
+  "report_name": "Physical Count Variance",
+  "report_script": null,
+  "report_type": "Query Report",
+  "roles": [
+   {
+    "role": "Stock Manager"
+   },
+   {
+    "role": "Department Officer"
+   },
+   {
+    "role": "Procurement Officer"
+   }
+  ],
+  "snapshot_report": 0,
+  "timeout": 0
  }
 ]

@@ -224,6 +224,18 @@ def setup_report_permissions():
 
 		update_permission_property(doctype, role, 0, "report", 1)
 
+	# Stock Reconciliation, for "Physical Count Variance": unlike the grants above,
+	# Department Officer has NO existing permission here at all (confirmed via a
+	# fresh Custom DocPerm/DocPerm query — not even the native Stock User role has
+	# read=1 on this doctype), so both read and report must be granted together,
+	# not just report on top of an assumed-existing read.
+	doctype, role = "Stock Reconciliation", "Department Officer"
+	if frappe.db.exists("DocType", doctype) and frappe.db.exists("Role", role):
+		if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role}):
+			add_permission(doctype, role, permlevel=0)
+		update_permission_property(doctype, role, 0, "read", 1)
+		update_permission_property(doctype, role, 0, "report", 1)
+
 	frappe.db.commit()
 	frappe.clear_cache()
-	frappe.logger().info("KCSC Proc: 'report' permission configured for Material Request/Item.")
+	frappe.logger().info("KCSC Proc: 'report' permission configured for Material Request/Item/Stock Reconciliation.")
