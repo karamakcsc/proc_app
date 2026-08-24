@@ -1,0 +1,40 @@
+#!/bin/bash
+# Pre-commit hook: enforces proc_app's standing policy that Workflow fixtures
+# must always commit is_active: 0 (workflows should never auto-activate on a
+# fresh install; activation is always a deliberate, non-fixture-tracked runtime
+# action). Root cause of the drift this fixes: any `bench export-fixtures` run
+# for this app re-captures the workflows' CURRENT live state, since Workflow
+# shares the same export mechanism as every other fixture-tracked doctype —
+# meaning this drift can recur from ANY future fixture-export, for any reason,
+# not just workflow-related changes. See PROC_APP_SPEC.md Known Issues.
+
+FIXTURE_FILE="proc_app/fixtures/workflow.json"
+
+if [ -f "$FIXTURE_FILE" ]; then
+	python3 - <<'PYEOF'
+import json
+
+path = "proc_app/fixtures/workflow.json"
+with open(path) as f:
+	content = f.read()
+data = json.loads(content)
+
+changed = False
+for wf in data:
+	if wf.get("is_active") == 1:
+		wf["is_active"] = 0
+		changed = True
+
+if changed:
+	# Match the exact formatting produced by `bench export-fixtures` (indent=1,
+	# no trailing newline) — confirmed via round-trip comparison against the
+	# real file before writing this hook, to avoid introducing a spurious
+	# formatting-only diff on every correction.
+	with open(path, "w") as f:
+		f.write(json.dumps(data, indent=1))
+	print("pre-commit: corrected is_active drift in workflow.json (auto-fixed, staged)")
+PYEOF
+	git add "$FIXTURE_FILE"
+fi
+
+exit 0
