@@ -63,7 +63,9 @@ def submit_quotation(rfq_name, supplier, items):
 			"uom": item.get("uom"),
 			"warehouse": item.get("warehouse"),
 			"request_for_quotation": rfq_name,
-			"request_for_quotation_item": item.get("name")
+			"request_for_quotation_item": item.get("name"),
+			"lead_time_days": item.get("lead_time_days"),
+			"expected_delivery_date": item.get("expected_delivery_date"),
 		})
 
 	sq.insert(ignore_permissions=True)
