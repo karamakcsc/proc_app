@@ -22,6 +22,7 @@ def after_migrate():
 	setup_stock_settings_permission()
 	setup_rfq_permissions()
 	setup_report_permissions()
+	setup_comparison_sheet_permissions()
 
 
 def setup_material_request_permissions():
@@ -239,3 +240,39 @@ def setup_report_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: 'report' permission configured for Material Request/Item/Stock Reconciliation.")
+
+
+def setup_comparison_sheet_permissions():
+	"""RFQ Comparison Sheet was created (Stage C) with only System Manager
+	permissions on the doctype itself — Procurement Officer, who actually
+	generates and views these from proc_portal, had zero access. Child table
+	rows (RFQ Comparison Sheet Item) don't need separate permissions, same
+	rule already confirmed for every other child table in this project."""
+	doctype = "RFQ Comparison Sheet"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_comparison_sheet_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_comparison_sheet_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+	]:
+		update_permission_property(doctype, role, 0, ptype, value)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: RFQ Comparison Sheet DocPerm configured for Procurement Officer.")
