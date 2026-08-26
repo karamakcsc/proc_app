@@ -23,6 +23,7 @@ def after_migrate():
 	setup_rfq_permissions()
 	setup_report_permissions()
 	setup_comparison_sheet_permissions()
+	setup_po_generation_permissions()
 
 
 def setup_material_request_permissions():
@@ -276,3 +277,61 @@ def setup_comparison_sheet_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: RFQ Comparison Sheet DocPerm configured for Procurement Officer.")
+
+
+def setup_po_generation_permissions():
+	"""PO-from-Comparison-Sheet Stage B: Procurement Officer already had read-only
+	access to Purchase Order (granted in setup_po_amendment_permissions(), only to
+	select a PO on the Amendment form's link field) but never create/write/submit —
+	confirmed via a live PermissionError while testing generate_purchase_orders_from_comparison(),
+	not assumed. Needed now to actually generate, review, and submit POs from a
+	winning RFQ Comparison Sheet. Also grants read on Supplier Quotation itself:
+	get_mapped_doc() checks read permission on the SOURCE document being mapped
+	FROM, and Procurement Officer had zero access to Supplier Quotation at all
+	(confirmed via a second live PermissionError, and via DocPerm/Custom DocPerm
+	queries showing no native role or prior grant covered it). Also grants read
+	on Account: ERPNext's own AccountsController.set_payment_schedule() (run
+	during Purchase Order validate(), which ignore_permissions=True on insert()
+	does NOT bypass, since it's an inline frappe.throw(exc=PermissionError) in
+	business logic, not the doc-level insert check) resolves the supplier's
+	party account and explicitly checks read access on it — the same class of
+	gap already found and fixed once before for a different role
+	(PROC_APP_SPEC.md Changelog v1.4, Account/Item for Supplier Portal User),
+	confirmed via a third live PermissionError, not assumed."""
+	doctype = "Purchase Order"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_po_generation_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_po_generation_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+		("submit", 1),
+	]:
+		update_permission_property(doctype, role, 0, ptype, value)
+
+	if not frappe.db.exists("Custom DocPerm", {"parent": "Supplier Quotation", "role": role, "permlevel": 0}):
+		add_permission("Supplier Quotation", role, 0)
+		update_permission_property("Supplier Quotation", role, 0, "read", 1)
+
+	if not frappe.db.exists("Custom DocPerm", {"parent": "Account", "role": role, "permlevel": 0}):
+		add_permission("Account", role, 0)
+		update_permission_property("Account", role, 0, "read", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Purchase Order create/write/submit + Supplier Quotation/Account read configured for Procurement Officer.")

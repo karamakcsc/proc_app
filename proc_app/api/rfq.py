@@ -145,3 +145,46 @@ def generate_comparison_sheet(rfq_name):
 	sheet.insert(ignore_permissions=True)
 	frappe.db.commit()
 	return sheet.name
+
+
+def generate_purchase_orders_from_comparison(rfq_name):
+	"""Generates one Purchase Order per distinct winning supplier from an RFQ's
+	Comparison Sheet, using ERPNext's own native make_purchase_order() mapper,
+	filtered to only the items that supplier actually won (item_rank == 1) —
+	not their entire quotation. Left as Draft — a human reviews and submits."""
+	from erpnext.buying.doctype.supplier_quotation.supplier_quotation import make_purchase_order
+
+	sheet_name = frappe.db.get_value("RFQ Comparison Sheet", {"request_for_quotation": rfq_name}, "name")
+	if not sheet_name:
+		frappe.throw("No comparison sheet exists for this RFQ. Generate one first.")
+
+	sheet = frappe.get_doc("RFQ Comparison Sheet", sheet_name)
+	winners = [row for row in sheet.items if row.item_rank == 1]
+	if not winners:
+		frappe.throw("No winning items found in the comparison sheet.")
+
+	winners_by_sqi = {row.supplier_quotation_item: row for row in winners}
+
+	by_quotation = {}
+	for row in winners:
+		by_quotation.setdefault(row.supplier_quotation, []).append(row.supplier_quotation_item)
+
+	created_pos = []
+	for sq_name, item_names in by_quotation.items():
+		po = make_purchase_order(sq_name, args={"filtered_children": item_names})
+		# ERPNext's own get_schedule_dates() only fills schedule_date (Required By)
+		# from a linked Material Request Item — these quotations have none, since
+		# they trace back to an RFQ, not a Material Request. Use the winning row's
+		# own lead_time_days (already scored on the comparison sheet) instead;
+		# fall back to 7 days only when that's genuinely missing (same "no real
+		# signal" case the scoring engine already treats as 0/excluded).
+		for po_item in po.items:
+			if not po_item.schedule_date:
+				winner_row = winners_by_sqi.get(po_item.supplier_quotation_item)
+				lead_time = winner_row.lead_time_days if winner_row else 0
+				po_item.schedule_date = frappe.utils.add_days(frappe.utils.nowdate(), lead_time or 7)
+		po.insert(ignore_permissions=True)
+		created_pos.append(po.name)
+
+	frappe.db.commit()
+	return created_pos
