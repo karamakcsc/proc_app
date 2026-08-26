@@ -77,3 +77,69 @@ def submit_quotation(rfq_name, supplier, items):
 	sq.submit()
 	frappe.db.commit()
 	return {"success": True, "quotation_name": sq.name}
+
+
+def generate_comparison_sheet(rfq_name):
+	"""Generates (or regenerates) an RFQ Comparison Sheet, scoring every
+	supplier's quote against every other supplier who quoted the SAME item,
+	per the formula confirmed 2026-08-24 (see PROC_APP_SPEC.md).
+	Missing/zero lead_time_days scores 0 for that factor and is EXCLUDED
+	from the "best lead time" reference calculation, so a supplier who
+	didn't provide one can never accidentally win on that basis."""
+	rfq = frappe.get_doc("Request for Quotation", rfq_name)
+	price_weight = rfq.price_weight or 0
+	lead_time_weight = rfq.lead_time_weight or 0
+
+	quotes = frappe.db.sql("""
+		SELECT sqi.item_code, sqi.rate, sqi.lead_time_days, sq.supplier
+		FROM `tabSupplier Quotation Item` sqi
+		JOIN `tabSupplier Quotation` sq ON sq.name = sqi.parent
+		WHERE sqi.request_for_quotation = %s AND sq.docstatus = 1
+	""", (rfq_name,), as_dict=True)
+
+	by_item = {}
+	for q in quotes:
+		by_item.setdefault(q.item_code, []).append(q)
+
+	rows = []
+	for item_code, item_quotes in by_item.items():
+		min_price = min(q.rate for q in item_quotes) if item_quotes else 0
+		real_lead_times = [q.lead_time_days for q in item_quotes if q.lead_time_days and q.lead_time_days > 0]
+		min_lead_time = min(real_lead_times) if real_lead_times else None
+
+		ranked = []
+		for q in item_quotes:
+			price_score = (min_price / q.rate * 100) if q.rate else 0
+			if q.lead_time_days and q.lead_time_days > 0 and min_lead_time:
+				lead_time_score = min_lead_time / q.lead_time_days * 100
+			else:
+				lead_time_score = 0
+			weighted_mark = (price_score * price_weight / 100) + (lead_time_score * lead_time_weight / 100)
+			ranked.append({
+				"item_code": item_code,
+				"supplier": q.supplier,
+				"quoted_price": q.rate,
+				"lead_time_days": q.lead_time_days or 0,
+				"price_score": round(price_score, 2),
+				"lead_time_score": round(lead_time_score, 2),
+				"weighted_mark": round(weighted_mark, 2),
+			})
+		ranked.sort(key=lambda r: r["weighted_mark"], reverse=True)
+		for i, r in enumerate(ranked, start=1):
+			r["item_rank"] = i
+		rows.extend(ranked)
+
+	existing = frappe.db.get_value("RFQ Comparison Sheet", {"request_for_quotation": rfq_name}, "name")
+	if existing:
+		frappe.delete_doc("RFQ Comparison Sheet", existing, force=True, ignore_permissions=True)
+
+	sheet = frappe.get_doc({
+		"doctype": "RFQ Comparison Sheet",
+		"request_for_quotation": rfq_name,
+		"price_weight": price_weight,
+		"lead_time_weight": lead_time_weight,
+		"items": rows,
+	})
+	sheet.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return sheet.name
