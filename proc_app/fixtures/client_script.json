@@ -1,0 +1,13 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "RFQ Comparison Sheet",
+  "enabled": 1,
+  "modified": "2026-08-27 01:20:33.820440",
+  "module": null,
+  "name": "RFQ Comparison Sheet Item Supplier Ellipsis",
+  "script": "frappe.ui.form.on('RFQ Comparison Sheet', {\n\trefresh: function(frm) {\n\t\tfrm.fields_dict['items'].grid.update_docfield_property('supplier', 'formatter', function(value) {\n\t\t\treturn `<div style=\"overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;\" title=\"${value || ''}\">${value || ''}</div>`;\n\t\t});\n\t}\n});",
+  "view": "Form"
+ }
+]

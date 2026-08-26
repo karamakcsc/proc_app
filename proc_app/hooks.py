@@ -15,6 +15,7 @@ fixtures = [
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase"]]]},
 	{"dt": "Workflow", "filters": [["name", "in", ["Material Request Approval", "Purchase Order Amendment Approval", "RFQ Approval"]]]},
 	{"dt": "Report", "filters": [["name", "in", ["Purchase Requisition Status", "Items Below Reorder Level", "Physical Count Variance"]]]},
+	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis"]]]},
 ]
 
 doc_events = {
