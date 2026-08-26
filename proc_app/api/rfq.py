@@ -91,7 +91,7 @@ def generate_comparison_sheet(rfq_name):
 	lead_time_weight = rfq.lead_time_weight or 0
 
 	quotes = frappe.db.sql("""
-		SELECT sqi.item_code, sqi.rate, sqi.lead_time_days, sq.supplier
+		SELECT sqi.item_code, sqi.rate, sqi.lead_time_days, sq.supplier, sq.name as sq_name, sqi.name as sqi_name
 		FROM `tabSupplier Quotation Item` sqi
 		JOIN `tabSupplier Quotation` sq ON sq.name = sqi.parent
 		WHERE sqi.request_for_quotation = %s AND sq.docstatus = 1
@@ -123,6 +123,8 @@ def generate_comparison_sheet(rfq_name):
 				"price_score": round(price_score, 2),
 				"lead_time_score": round(lead_time_score, 2),
 				"weighted_mark": round(weighted_mark, 2),
+				"supplier_quotation": q.sq_name,
+				"supplier_quotation_item": q.sqi_name,
 			})
 		ranked.sort(key=lambda r: r["weighted_mark"], reverse=True)
 		for i, r in enumerate(ranked, start=1):
