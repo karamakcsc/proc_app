@@ -297,7 +297,14 @@ def setup_po_generation_permissions():
 	party account and explicitly checks read access on it — the same class of
 	gap already found and fixed once before for a different role
 	(PROC_APP_SPEC.md Changelog v1.4, Account/Item for Supplier Portal User),
-	confirmed via a third live PermissionError, not assumed."""
+	confirmed via a third live PermissionError, not assumed. Also grants
+	write/create/submit on Supplier Quotation itself (previously read-only,
+	from the grant above): staff entering a quotation directly through the
+	desk on a supplier's behalf, found via Yasser's hands-on testing, is a
+	genuinely new use case — every prior quotation went through
+	supplier_portal's own permission-bypassing insert(ignore_permissions=True),
+	so this path had never actually been exercised under real permissions
+	before."""
 	doctype = "Purchase Order"
 	role = "Procurement Officer"
 
@@ -324,9 +331,15 @@ def setup_po_generation_permissions():
 	]:
 		update_permission_property(doctype, role, 0, ptype, value)
 
-	if not frappe.db.exists("Custom DocPerm", {"parent": "Supplier Quotation", "role": role, "permlevel": 0}):
-		add_permission("Supplier Quotation", role, 0)
-		update_permission_property("Supplier Quotation", role, 0, "read", 1)
+	frappe.db.delete("Custom DocPerm", {"parent": "Supplier Quotation", "role": role, "permlevel": 0})
+	add_permission("Supplier Quotation", role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+		("submit", 1),
+	]:
+		update_permission_property("Supplier Quotation", role, 0, ptype, value)
 
 	if not frappe.db.exists("Custom DocPerm", {"parent": "Account", "role": role, "permlevel": 0}):
 		add_permission("Account", role, 0)
