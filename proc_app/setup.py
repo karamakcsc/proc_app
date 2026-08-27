@@ -24,6 +24,7 @@ def after_migrate():
 	setup_report_permissions()
 	setup_comparison_sheet_permissions()
 	setup_po_generation_permissions()
+	setup_contract_permissions()
 
 
 def setup_material_request_permissions():
@@ -348,3 +349,43 @@ def setup_po_generation_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Purchase Order create/write/submit + Supplier Quotation/Account read configured for Procurement Officer.")
+
+
+def setup_contract_permissions():
+	"""Contract Management (Changelog v1.38) added a reverse link and expiry
+	reminders but never granted Procurement Officer any access to Contract
+	itself — a proactive check before Yasser's hands-on testing, same class
+	of gap already found (and always this same way) for every other doctype
+	touched by this project. Confirmed via DocPerm/Custom DocPerm queries:
+	only Sales Manager/HR Manager/System Manager/Purchase Manager (all native,
+	none of them this project's roles) have any access; Procurement Officer
+	had zero."""
+	doctype = "Contract"
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("DocType", doctype):
+		frappe.logger().warning(
+			f"setup_contract_permissions: DocType '{doctype}' not found, skipping"
+		)
+		return
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(
+			f"setup_contract_permissions: Role '{role}' not found, skipping"
+		)
+		return
+
+	frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+
+	add_permission(doctype, role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+		("create", 1),
+		("submit", 1),
+	]:
+		update_permission_property(doctype, role, 0, ptype, value)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Contract read/write/create/submit configured for Procurement Officer.")
