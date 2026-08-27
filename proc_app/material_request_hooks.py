@@ -14,9 +14,14 @@ def on_material_request_update(doc, method):
 	if frappe.db.exists("Material Request", {"source_material_request": doc.name}):
 		return  # safety net against duplicate spawning
 
+	company = frappe.db.get_value("Department", doc.requesting_department, "company")
+	if not company:
+		frappe.throw(f"Could not determine company for department {doc.requesting_department}")
+
 	new_doc = frappe.get_doc({
 		"doctype": "Material Request",
 		"material_request_type": "Purchase",
+		"company": company,
 		"transaction_date": frappe.utils.today(),
 		"schedule_date": doc.schedule_date,
 		"requesting_department": doc.requesting_department,
