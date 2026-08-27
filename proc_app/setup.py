@@ -364,7 +364,19 @@ def setup_contract_permissions():
 	"Insufficient Permission for Contract Template" — the same class of gap
 	already documented for Account in setup_po_generation_permissions()
 	(a linked doctype needs its own explicit read grant, insert()'s
-	ignore_permissions doesn't cover Link-field reads triggered from the form)."""
+	ignore_permissions doesn't cover Link-field reads triggered from the form).
+	Also grants read+write on Purchase Invoice: full Contract linking
+	(proc_portal Purchase Invoice Detail + reverse-lookup on Contract Detail)
+	needs Procurement Officer to view PIs and set their `contract` link field
+	from the portal. Originally granted read-only, reasoning "write/create not
+	needed for viewing" — corrected after a live test caught the actual
+	contradiction: the very feature this permission exists for (linking a PI
+	to a Contract from the portal) is itself a write to the PI's `contract`
+	field, which `set_contract_link()`'s own permission check (added after
+	finding raw `db.set_value()` bypassed authorization entirely) correctly
+	rejected without it. `create`/`submit` remain deliberately ungranted —
+	Purchase Invoices still originate only from the supplier submission flow
+	already built, never manual portal creation."""
 	doctype = "Contract"
 	role = "Procurement Officer"
 
@@ -394,6 +406,14 @@ def setup_contract_permissions():
 	if not frappe.db.exists("Custom DocPerm", {"parent": "Contract Template", "role": role, "permlevel": 0}):
 		add_permission("Contract Template", role, 0)
 		update_permission_property("Contract Template", role, 0, "read", 1)
+
+	frappe.db.delete("Custom DocPerm", {"parent": "Purchase Invoice", "role": role, "permlevel": 0})
+	add_permission("Purchase Invoice", role, permlevel=0)
+	for ptype, value in [
+		("read", 1),
+		("write", 1),
+	]:
+		update_permission_property("Purchase Invoice", role, 0, ptype, value)
 
 	frappe.db.commit()
 	frappe.clear_cache()
