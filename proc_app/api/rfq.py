@@ -79,6 +79,7 @@ def submit_quotation(rfq_name, supplier, items):
 	return {"success": True, "quotation_name": sq.name}
 
 
+@frappe.whitelist()
 def generate_comparison_sheet(rfq_name):
 	"""Generates (or regenerates) an RFQ Comparison Sheet, scoring every
 	supplier's quote against every other supplier who quoted the SAME item,
@@ -147,6 +148,7 @@ def generate_comparison_sheet(rfq_name):
 	return sheet.name
 
 
+@frappe.whitelist()
 def generate_purchase_orders_from_comparison(rfq_name):
 	"""Generates one Purchase Order per distinct winning supplier from an RFQ's
 	Comparison Sheet, using ERPNext's own native make_purchase_order() mapper,

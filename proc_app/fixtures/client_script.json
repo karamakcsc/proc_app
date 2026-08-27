@@ -9,5 +9,16 @@
   "name": "RFQ Comparison Sheet Item Supplier Ellipsis",
   "script": "frappe.ui.form.on('RFQ Comparison Sheet', {\n\trefresh: function(frm) {\n\t\tfrm.fields_dict['items'].grid.update_docfield_property('supplier', 'formatter', function(value) {\n\t\t\treturn `<div style=\"overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;\" title=\"${value || ''}\">${value || ''}</div>`;\n\t\t});\n\t\t['price_score', 'lead_time_score', 'weighted_mark'].forEach(function(fieldname) {\n\t\t\tfrm.fields_dict['items'].grid.update_docfield_property(fieldname, 'formatter', function(value) {\n\t\t\t\tif (value === null || value === undefined) return '';\n\t\t\t\treturn parseFloat(value).toFixed(2);\n\t\t\t});\n\t\t});\n\n\t\tsetTimeout(function() {\n\t\t\tfrm.fields_dict['items'].grid.refresh();\n\t\t}, 300);\n\n\t}\n});",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Request for Quotation",
+  "enabled": 1,
+  "modified": "2026-08-27 13:07:35.166492",
+  "module": null,
+  "name": "Request for Quotation Desk Buttons",
+  "script": "frappe.ui.form.on('Request for Quotation', {\n\trefresh: function(frm) {\n\t\tif (frm.doc.workflow_state === 'Approved') {\n\t\t\tfrm.add_custom_button('Generate Comparison Sheet', function() {\n\t\t\t\tfrappe.call({\n\t\t\t\t\tmethod: 'proc_app.api.rfq.generate_comparison_sheet',\n\t\t\t\t\targs: { rfq_name: frm.doc.name },\n\t\t\t\t\tfreeze: true,\n\t\t\t\t\tfreeze_message: __('Generating comparison sheet...'),\n\t\t\t\t\tcallback: function(r) {\n\t\t\t\t\t\tif (r.message) {\n\t\t\t\t\t\t\tfrappe.set_route('Form', 'RFQ Comparison Sheet', r.message);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}, __('Create'));\n\n\t\t\tfrappe.db.get_value('RFQ Comparison Sheet', {request_for_quotation: frm.doc.name}, 'name').then(function(r) {\n\t\t\t\tif (r.message && r.message.name) {\n\t\t\t\t\tfrm.add_custom_button('Generate Purchase Orders', function() {\n\t\t\t\t\t\tfrappe.call({\n\t\t\t\t\t\t\tmethod: 'proc_app.api.rfq.generate_purchase_orders_from_comparison',\n\t\t\t\t\t\t\targs: { rfq_name: frm.doc.name },\n\t\t\t\t\t\t\tfreeze: true,\n\t\t\t\t\t\t\tfreeze_message: __('Generating purchase orders...'),\n\t\t\t\t\t\t\tcallback: function(r) {\n\t\t\t\t\t\t\t\tif (r.message) {\n\t\t\t\t\t\t\t\t\tfrappe.msgprint(__('Created: ') + r.message.join(', '));\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}, __('Create'));\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}\n});",
+  "view": "Form"
  }
 ]
