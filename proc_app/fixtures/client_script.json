@@ -20,5 +20,16 @@
   "name": "Request for Quotation Desk Buttons",
   "script": "frappe.ui.form.on('Request for Quotation', {\n\trefresh: function(frm) {\n\t\tif (frm.doc.workflow_state === 'Approved') {\n\t\t\tfrm.add_custom_button('Generate Comparison Sheet', function() {\n\t\t\t\tfrappe.call({\n\t\t\t\t\tmethod: 'proc_app.api.rfq.generate_comparison_sheet',\n\t\t\t\t\targs: { rfq_name: frm.doc.name },\n\t\t\t\t\tfreeze: true,\n\t\t\t\t\tfreeze_message: __('Generating comparison sheet...'),\n\t\t\t\t\tcallback: function(r) {\n\t\t\t\t\t\tif (r.message) {\n\t\t\t\t\t\t\tfrappe.set_route('Form', 'RFQ Comparison Sheet', r.message);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}, __('Create'));\n\n\t\t\tfrappe.db.get_value('RFQ Comparison Sheet', {request_for_quotation: frm.doc.name}, 'name').then(function(r) {\n\t\t\t\tif (r.message && r.message.name) {\n\t\t\t\t\tfrm.add_custom_button('Generate Purchase Orders', function() {\n\t\t\t\t\t\tfrappe.call({\n\t\t\t\t\t\t\tmethod: 'proc_app.api.rfq.generate_purchase_orders_from_comparison',\n\t\t\t\t\t\t\targs: { rfq_name: frm.doc.name },\n\t\t\t\t\t\t\tfreeze: true,\n\t\t\t\t\t\t\tfreeze_message: __('Generating purchase orders...'),\n\t\t\t\t\t\t\tcallback: function(r) {\n\t\t\t\t\t\t\t\tif (r.message) {\n\t\t\t\t\t\t\t\t\tfrappe.msgprint(__('Created: ') + r.message.join(', '));\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}, __('Create'));\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}\n});",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Supplier Quotation",
+  "enabled": 1,
+  "modified": "2026-08-27 14:05:14.925350",
+  "module": null,
+  "name": "Supplier Quotation Lead Time Auto-Calc",
+  "script": "frappe.ui.form.on('Supplier Quotation Item', {\n\tlead_time_days: function(frm, cdt, cdn) {\n\t\tlet row = locals[cdt][cdn];\n\t\tif (row.lead_time_days) {\n\t\t\tlet base_date = frm.doc.transaction_date || frappe.datetime.get_today();\n\t\t\trow.expected_delivery_date = frappe.datetime.add_days(base_date, row.lead_time_days);\n\t\t\tfrm.refresh_field('items');\n\t\t}\n\t}\n});",
+  "view": "Form"
  }
 ]
