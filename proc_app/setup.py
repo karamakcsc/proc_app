@@ -359,7 +359,12 @@ def setup_contract_permissions():
 	touched by this project. Confirmed via DocPerm/Custom DocPerm queries:
 	only Sales Manager/HR Manager/System Manager/Purchase Manager (all native,
 	none of them this project's roles) have any access; Procurement Officer
-	had zero."""
+	had zero. Also grants read on Contract Template: Contract's own form has
+	a Link field to it (contract_template), and Yasser's hands-on testing hit
+	"Insufficient Permission for Contract Template" — the same class of gap
+	already documented for Account in setup_po_generation_permissions()
+	(a linked doctype needs its own explicit read grant, insert()'s
+	ignore_permissions doesn't cover Link-field reads triggered from the form)."""
 	doctype = "Contract"
 	role = "Procurement Officer"
 
@@ -386,6 +391,10 @@ def setup_contract_permissions():
 	]:
 		update_permission_property(doctype, role, 0, ptype, value)
 
+	if not frappe.db.exists("Custom DocPerm", {"parent": "Contract Template", "role": role, "permlevel": 0}):
+		add_permission("Contract Template", role, 0)
+		update_permission_property("Contract Template", role, 0, "read", 1)
+
 	frappe.db.commit()
 	frappe.clear_cache()
-	frappe.logger().info("KCSC Proc: Contract read/write/create/submit configured for Procurement Officer.")
+	frappe.logger().info("KCSC Proc: Contract read/write/create/submit + Contract Template read configured for Procurement Officer.")
