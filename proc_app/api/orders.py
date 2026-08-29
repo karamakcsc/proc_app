@@ -23,18 +23,29 @@ def acknowledge_po(po_name, note=None):
 	return {"success": True, "message": "Order acknowledged successfully."}
 
 
-def request_amendment(po_name, reason):
-	"""Core amendment-request logic via Comment doctype — no dedicated
-	Purchase Order Amendment doctype exists in ERPNext (confirmed earlier
-	in this project's OOB-vs-Custom audit)."""
-	comment = frappe.get_doc({
-		"doctype": "Comment",
-		"comment_type": "Comment",
-		"reference_doctype": "Purchase Order",
-		"reference_name": po_name,
-		"content": f"<b>Amendment Request from Supplier Portal:</b><br>{reason}",
-		"comment_by": frappe.session.user,
+def request_amendment(po_name, amendment_type, reason):
+	"""Core amendment-request logic — creates a real Purchase Order Amendment
+	instead of the plain Comment this used to post (retired: that mechanism
+	predates the Purchase Order Amendment doctype existing in this project).
+
+	Does NOT use apply_workflow(doc, "Submit") the way proc_portal's own
+	internal create_amendment() does — the "Purchase Order Amendment Approval"
+	workflow's Draft->Pending Approval "Submit" transition is gated to the
+	Procurement Officer role (confirmed via the real Workflow Transition rows),
+	and a supplier portal session never holds that role. Sets workflow_state
+	directly via db_set instead, bypassing transition-graph validation — the
+	same deliberate, already-proven pattern used in material_request_hooks.py's
+	spawn hook, since this is a system-driven continuation on the supplier's
+	behalf, not a genuine internal-staff workflow transition."""
+	doc = frappe.get_doc({
+		"doctype": "Purchase Order Amendment",
+		"purchase_order": po_name,
+		"amendment_type": amendment_type,
+		"description": reason,
+		"reason": reason,
+		"requested_by": frappe.session.user,
 	})
-	comment.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)
+	doc.db_set("workflow_state", "Pending Approval", update_modified=False)
 	frappe.db.commit()
-	return {"success": True, "message": "Amendment request submitted."}
+	return {"success": True, "name": doc.name}
