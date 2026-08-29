@@ -38,6 +38,23 @@ def on_material_request_update(doc, method):
 		],
 	})
 	new_doc.insert(ignore_permissions=True)
+
+	# Carry over any supporting documents attached to the original request — without
+	# this, Forward-to-Purchase would silently drop them, since the spawned document
+	# is a brand-new record with no attachments of its own. Reuses Frappe's own native
+	# File.create_attachment_copy() (frappe/core/doctype/file/file.py) rather than
+	# hand-building File records, since it correctly reuses file_url (no duplicate
+	# file content), respects attachment limits, and logs the copy as a Comment.
+	original_attachments = frappe.get_all(
+		"File",
+		filters={"attached_to_doctype": doc.doctype, "attached_to_name": doc.name},
+		pluck="name",
+	)
+	for file_name in original_attachments:
+		frappe.get_doc("File", file_name).create_attachment_copy(
+			new_doc.doctype, new_doc.name, ignore_permissions=True
+		)
+
 	# Set workflow_state directly via db_set (bypasses transition-graph validation,
 	# deliberate here since this is a system-driven continuation, not a user transition)
 	new_doc.db_set("workflow_state", "Pending Concerned-Dept Manager Approval", update_modified=False)
