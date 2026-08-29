@@ -426,8 +426,17 @@ def setup_asn_grn_permissions():
 	need Procurement Officer to read both doctypes — a proactive check before
 	building those screens found zero existing Custom DocPerm rows for either,
 	same recurring gap class as every other doctype touched by this project.
-	Read-only: this is a viewing feature, no portal-side create/write/submit
-	flow for either doctype exists."""
+	Read-only originally: that was a viewing-only feature, no create/write/submit
+	flow for either doctype from the portal side.
+
+	Extended later to grant `create` on Purchase Receipt specifically: the new
+	"Create > Purchase Receipt" desk button on Supplier ASN (make_purchase_receipt_from_asn())
+	reuses ERPNext's native get_mapped_doc() mapper, which checks check_permission("create")
+	on the TARGET doctype before returning even an unsaved, in-memory mapped doc — confirmed
+	live, a read-only Procurement Officer genuinely hit a real PermissionError here, not a
+	hypothetical. Still no write/submit granted: the human reviewing the mapped form performs
+	the actual save/submit themselves, matching native ERPNext "Create" button UX, so create
+	is the only additional ptype this specific flow needs."""
 	role = "Procurement Officer"
 
 	if not frappe.db.exists("Role", role):
@@ -442,7 +451,11 @@ def setup_asn_grn_permissions():
 		frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
 		add_permission(doctype, role, permlevel=0)
 		update_permission_property(doctype, role, 0, "read", 1)
+		if doctype == "Purchase Receipt":
+			update_permission_property(doctype, role, 0, "create", 1)
 
 	frappe.db.commit()
 	frappe.clear_cache()
-	frappe.logger().info("KCSC Proc: Supplier ASN + Purchase Receipt read configured for Procurement Officer.")
+	frappe.logger().info(
+		"KCSC Proc: Supplier ASN read + Purchase Receipt read/create configured for Procurement Officer."
+	)

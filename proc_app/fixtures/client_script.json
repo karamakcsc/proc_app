@@ -31,5 +31,16 @@
   "name": "Supplier Quotation Lead Time Auto-Calc",
   "script": "frappe.ui.form.on('Supplier Quotation Item', {\n\tlead_time_days: function(frm, cdt, cdn) {\n\t\tlet row = locals[cdt][cdn];\n\t\tif (row.lead_time_days) {\n\t\t\tlet base_date = frm.doc.transaction_date || frappe.datetime.get_today();\n\t\t\trow.expected_delivery_date = frappe.datetime.add_days(base_date, row.lead_time_days);\n\t\t\tfrm.refresh_field('items');\n\t\t}\n\t}\n});",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Supplier ASN",
+  "enabled": 1,
+  "modified": "2026-08-29 18:13:04.815716",
+  "module": null,
+  "name": "Supplier ASN Create Purchase Receipt Button",
+  "script": "frappe.ui.form.on('Supplier ASN', {\n\trefresh: function(frm) {\n\t\tif (frm.doc.docstatus !== 2 && frm.doc.status !== 'Cancelled') {\n\t\t\tfrm.add_custom_button('Purchase Receipt', function() {\n\t\t\t\tfrappe.model.open_mapped_doc({\n\t\t\t\t\tmethod: 'proc_app.api.asn.make_purchase_receipt_from_asn',\n\t\t\t\t\tfrm: frm,\n\t\t\t\t});\n\t\t\t}, __('Create'));\n\t\t}\n\t}\n});\n",
+  "view": "Form"
  }
 ]
