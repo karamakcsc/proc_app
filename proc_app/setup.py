@@ -375,9 +375,18 @@ def setup_contract_permissions():
 	to a Contract from the portal) is itself a write to the PI's `contract`
 	field, which `set_contract_link()`'s own permission check (added after
 	finding raw `db.set_value()` bypassed authorization entirely) correctly
-	rejected without it. `create`/`submit` remain deliberately ungranted —
-	Purchase Invoices still originate only from the supplier submission flow
-	already built, never manual portal creation."""
+	rejected without it. `submit` remains deliberately ungranted — Purchase
+	Invoices are built and reviewed via the portal's own unsaved-preview flow,
+	then submitted through the normal desk/native process, not straight from
+	a portal API call. `create` WAS deliberately ungranted too, on the
+	original grounds that "Purchase Invoices still originate only from the
+	supplier submission flow already built, never manual portal creation" —
+	reversed per direct instruction when a New Purchase Invoice form was
+	commissioned for proc_portal (mirroring New Purchase Order), confirmed
+	explicitly since it overrides that earlier architectural decision rather
+	than silently patching around it. Found live: `doc.insert()` from the new
+	form's `create_purchase_invoice()` genuinely raised `PermissionError`
+	first, confirming the gap was real, not assumed."""
 	doctype = "Contract"
 	role = "Procurement Officer"
 
@@ -413,6 +422,7 @@ def setup_contract_permissions():
 	for ptype, value in [
 		("read", 1),
 		("write", 1),
+		("create", 1),
 	]:
 		update_permission_property("Purchase Invoice", role, 0, ptype, value)
 
