@@ -3,15 +3,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-08-08 01:01:23.265654",
-  "name": "Pending Requesting-Dept Approval",
-  "style": "",
-  "workflow_state_name": "Pending Requesting-Dept Approval"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2026-08-08 01:01:23.333219",
   "name": "Approved - Issue",
   "style": "",
@@ -70,5 +61,14 @@
   "name": "Approved - Purchase",
   "style": "",
   "workflow_state_name": "Approved - Purchase"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-08 01:01:23.265654",
+  "name": "Pending Requesting-Dept Approval",
+  "style": "",
+  "workflow_state_name": "Pending Requesting-Dept Approval"
  }
 ]

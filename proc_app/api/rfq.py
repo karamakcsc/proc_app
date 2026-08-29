@@ -102,6 +102,12 @@ def generate_comparison_sheet(rfq_name):
 	for q in quotes:
 		by_item.setdefault(q.item_code, []).append(q)
 
+	item_details = {
+		d.name: d for d in frappe.get_all(
+			"Item", filters={"name": ["in", list(by_item.keys())]}, fields=["name", "item_name", "stock_uom"]
+		)
+	}
+
 	rows = []
 	for item_code, item_quotes in by_item.items():
 		min_price = min(q.rate for q in item_quotes) if item_quotes else 0
@@ -116,8 +122,11 @@ def generate_comparison_sheet(rfq_name):
 			else:
 				lead_time_score = 0
 			weighted_mark = (price_score * price_weight / 100) + (lead_time_score * lead_time_weight / 100)
+			item_detail = item_details.get(item_code)
 			ranked.append({
 				"item_code": item_code,
+				"item_name": item_detail.item_name if item_detail else None,
+				"uom": item_detail.stock_uom if item_detail else None,
 				"supplier": q.supplier,
 				"quoted_price": q.rate,
 				"lead_time_days": q.lead_time_days or 0,
