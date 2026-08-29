@@ -25,6 +25,7 @@ def after_migrate():
 	setup_comparison_sheet_permissions()
 	setup_po_generation_permissions()
 	setup_contract_permissions()
+	setup_asn_grn_permissions()
 
 
 def setup_material_request_permissions():
@@ -418,3 +419,30 @@ def setup_contract_permissions():
 	frappe.db.commit()
 	frappe.clear_cache()
 	frappe.logger().info("KCSC Proc: Contract read/write/create/submit + Contract Template read configured for Procurement Officer.")
+
+
+def setup_asn_grn_permissions():
+	"""proc_portal's new ASN/Goods Receipt (Purchase Receipt) list/detail screens
+	need Procurement Officer to read both doctypes — a proactive check before
+	building those screens found zero existing Custom DocPerm rows for either,
+	same recurring gap class as every other doctype touched by this project.
+	Read-only: this is a viewing feature, no portal-side create/write/submit
+	flow for either doctype exists."""
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(f"setup_asn_grn_permissions: Role '{role}' not found, skipping")
+		return
+
+	for doctype in ["Supplier ASN", "Purchase Receipt"]:
+		if not frappe.db.exists("DocType", doctype):
+			frappe.logger().warning(f"setup_asn_grn_permissions: DocType '{doctype}' not found, skipping")
+			continue
+
+		frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+		add_permission(doctype, role, permlevel=0)
+		update_permission_property(doctype, role, 0, "read", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info("KCSC Proc: Supplier ASN + Purchase Receipt read configured for Procurement Officer.")
