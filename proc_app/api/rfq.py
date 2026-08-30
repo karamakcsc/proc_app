@@ -145,9 +145,14 @@ def generate_comparison_sheet(rfq_name):
 			r["is_manual_override"] = 0
 		rows.extend(ranked)
 
-	existing = frappe.db.get_value("RFQ Comparison Sheet", {"request_for_quotation": rfq_name}, "name")
+	existing = frappe.db.get_value(
+		"RFQ Comparison Sheet", {"request_for_quotation": rfq_name},
+		["name", "workflow_state", "docstatus"], as_dict=True,
+	)
 	if existing:
-		frappe.delete_doc("RFQ Comparison Sheet", existing, force=True, ignore_permissions=True)
+		if existing.docstatus == 1 or existing.workflow_state == "Approved":
+			frappe.throw(f"Comparison sheet {existing.name} has been approved and cannot be regenerated. Cancel it first if the comparison needs to be redone.")
+		frappe.delete_doc("RFQ Comparison Sheet", existing.name, force=True, ignore_permissions=True)
 
 	sheet = frappe.get_doc({
 		"doctype": "RFQ Comparison Sheet",
