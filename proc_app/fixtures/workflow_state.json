@@ -70,5 +70,14 @@
   "name": "Pending Requesting-Dept Approval",
   "style": "",
   "workflow_state_name": "Pending Requesting-Dept Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-08-30 23:50:41.078100",
+  "name": "Terminated",
+  "style": "Danger",
+  "workflow_state_name": "Terminated"
  }
 ]

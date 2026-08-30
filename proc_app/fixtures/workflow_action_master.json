@@ -19,5 +19,12 @@
   "modified": "2026-08-08 01:01:28.532528",
   "name": "Approve - Forward to Purchase",
   "workflow_action_name": "Approve - Forward to Purchase"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-08-30 23:50:41.210138",
+  "name": "Terminate",
+  "workflow_action_name": "Terminate"
  }
 ]
