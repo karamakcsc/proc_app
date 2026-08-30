@@ -182,6 +182,9 @@ def generate_purchase_orders_from_comparison(rfq_name):
 		frappe.throw("No comparison sheet exists for this RFQ. Generate one first.")
 
 	sheet = frappe.get_doc("RFQ Comparison Sheet", sheet_name)
+	if sheet.workflow_state != "Approved":
+		frappe.throw(f"This comparison sheet must be approved before purchase orders can be generated. Current status: {sheet.workflow_state or 'Draft'}")
+
 	winners = [row for row in sheet.items if row.is_selected]
 	if not winners:
 		winners = [row for row in sheet.items if row.item_rank == 1]

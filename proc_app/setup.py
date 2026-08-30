@@ -250,7 +250,17 @@ def setup_comparison_sheet_permissions():
 	permissions on the doctype itself — Procurement Officer, who actually
 	generates and views these from proc_portal, had zero access. Child table
 	rows (RFQ Comparison Sheet Item) don't need separate permissions, same
-	rule already confirmed for every other child table in this project."""
+	rule already confirmed for every other child table in this project.
+
+	Extended when the "Comparison Sheet Approval" workflow was added: the
+	workflow's own role-based transition gate gets a supplier/officer session
+	past the Approve *transition*, but Frappe separately enforces the
+	doctype-level `submit` permission the instant apply_workflow() has to
+	call doc.submit() itself (Approved's doc_status is 1, i.e. submitted) —
+	the same two-layer gap already documented for Purchase Order Amendment
+	and Purchase Invoice in this project. Found live, not assumed: a real
+	Procurement Officer session got a genuine PermissionError on Approve
+	before this was added."""
 	doctype = "RFQ Comparison Sheet"
 	role = "Procurement Officer"
 
@@ -273,6 +283,7 @@ def setup_comparison_sheet_permissions():
 		("read", 1),
 		("write", 1),
 		("create", 1),
+		("submit", 1),
 	]:
 		update_permission_property(doctype, role, 0, ptype, value)
 
