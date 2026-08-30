@@ -139,6 +139,10 @@ def generate_comparison_sheet(rfq_name):
 		ranked.sort(key=lambda r: r["weighted_mark"], reverse=True)
 		for i, r in enumerate(ranked, start=1):
 			r["item_rank"] = i
+			# Default state matches the computed recommendation -- nothing changes
+			# unless someone deliberately overrides via set_item_selection().
+			r["is_selected"] = 1 if i == 1 else 0
+			r["is_manual_override"] = 0
 		rows.extend(ranked)
 
 	existing = frappe.db.get_value("RFQ Comparison Sheet", {"request_for_quotation": rfq_name}, "name")
@@ -161,8 +165,16 @@ def generate_comparison_sheet(rfq_name):
 def generate_purchase_orders_from_comparison(rfq_name):
 	"""Generates one Purchase Order per distinct winning supplier from an RFQ's
 	Comparison Sheet, using ERPNext's own native make_purchase_order() mapper,
-	filtered to only the items that supplier actually won (item_rank == 1) —
-	not their entire quotation. Left as Draft — a human reviews and submits."""
+	filtered to only the items that supplier actually won -- not their entire
+	quotation. Left as Draft -- a human reviews and submits.
+
+	Reads the manual `is_selected` flag (set by set_item_selection()/
+	select_entire_proposal(), defaulting to the auto-computed rank-1 winner
+	at generation time) rather than item_rank directly, so a deliberate
+	override is honored. Falls back to item_rank == 1 when NO row anywhere
+	on the sheet has is_selected set -- genuinely old sheets generated
+	before this feature existed have it defaulting to 0/unset on every row,
+	and must keep working unmodified."""
 	from erpnext.buying.doctype.supplier_quotation.supplier_quotation import make_purchase_order
 
 	sheet_name = frappe.db.get_value("RFQ Comparison Sheet", {"request_for_quotation": rfq_name}, "name")
@@ -170,7 +182,9 @@ def generate_purchase_orders_from_comparison(rfq_name):
 		frappe.throw("No comparison sheet exists for this RFQ. Generate one first.")
 
 	sheet = frappe.get_doc("RFQ Comparison Sheet", sheet_name)
-	winners = [row for row in sheet.items if row.item_rank == 1]
+	winners = [row for row in sheet.items if row.is_selected]
+	if not winners:
+		winners = [row for row in sheet.items if row.item_rank == 1]
 	if not winners:
 		frappe.throw("No winning items found in the comparison sheet.")
 
