@@ -15,6 +15,7 @@ fixtures = [
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase", "Terminate"]]]},
 	{"dt": "Workflow", "filters": [["name", "in", ["Material Request Approval", "Purchase Order Amendment Approval", "RFQ Approval", "Comparison Sheet Approval", "Contract Approval"]]]},
 	{"dt": "Report", "filters": [["name", "in", ["Purchase Requisition Status", "Items Below Reorder Level", "Physical Count Variance", "RFQ Comparison - By Proposal"]]]},
+	{"dt": "Page", "filters": [["name", "in", ["rfq-comparison"]]]},
 	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons"]]]},
 ]
 

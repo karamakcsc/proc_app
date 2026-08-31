@@ -1,0 +1,43 @@
+/* Cascade-scoping override for portal.css, loaded into desk for the RFQ
+   Comparison custom page (see PROC_APP_SPEC.md for the full collision
+   writeup). Loaded via frappe.require() immediately AFTER portal.css in
+   the same array -- browser processes <link> tags in DOM append order,
+   and AssetManager.execute() appends them synchronously in array order
+   (confirmed in frappe/public/js/frappe/assets.js), so this file always
+   wins any cascade tie against portal.css's own rules.
+
+   portal.css ships two genuinely unscoped selectors that leak into desk:
+     * { box-sizing: border-box; }   -- confirmed harmless: Bootstrap's own
+                                         reboot already sets this identically
+                                         on *, *::before, *::after (grepped
+                                         the real desk.bundle.css), so this
+                                         is a redundant no-op, not a real bug.
+     body { background/color/font-family/font-size/line-height/margin }
+                                      -- NOT harmless: this is a real collision.
+                                         Desk's own bundle sets body's real
+                                         font-size (16px) and font-family
+                                         (var(--font-stack)) elsewhere, and
+                                         frappe.require() never removes a
+                                         loaded <link>, so without this
+                                         override portal.css's body rule
+                                         would permanently re-theme every
+                                         other desk screen for the rest of
+                                         the browser session, not just this
+                                         page. */
+body {
+	background: revert;
+	color: revert;
+	font-family: revert;
+	font-size: revert;
+	line-height: revert;
+	margin: revert;
+}
+
+.rfq-comparison-page {
+	background: var(--portal-bg);
+	color: var(--portal-text);
+	font-family: 'Inter', -apple-system, sans-serif;
+	font-size: 14px;
+	line-height: 1.5;
+	padding: 4px 2px;
+}
