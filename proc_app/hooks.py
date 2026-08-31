@@ -44,7 +44,7 @@ doc_events = {
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/proc_app/css/proc_app.css"
+app_include_css = "/assets/proc_app/css/desk_theme.css"
 # app_include_js = "/assets/proc_app/js/proc_app.js"
 
 # include js, css files in header of web template
