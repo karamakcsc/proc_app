@@ -4,10 +4,10 @@
   "doctype": "Client Script",
   "dt": "RFQ Comparison Sheet",
   "enabled": 1,
-  "modified": "2026-08-27 12:20:35.710192",
+  "modified": "2026-08-31 23:31:32.367459",
   "module": null,
   "name": "RFQ Comparison Sheet Item Supplier Ellipsis",
-  "script": "frappe.ui.form.on('RFQ Comparison Sheet', {\n\trefresh: function(frm) {\n\t\tfrm.fields_dict['items'].grid.update_docfield_property('supplier', 'formatter', function(value) {\n\t\t\treturn `<div style=\"overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;\" title=\"${value || ''}\">${value || ''}</div>`;\n\t\t});\n\t\t['price_score', 'lead_time_score', 'weighted_mark'].forEach(function(fieldname) {\n\t\t\tfrm.fields_dict['items'].grid.update_docfield_property(fieldname, 'formatter', function(value) {\n\t\t\t\tif (value === null || value === undefined) return '';\n\t\t\t\treturn parseFloat(value).toFixed(2);\n\t\t\t});\n\t\t});\n\n\t\tsetTimeout(function() {\n\t\t\tfrm.fields_dict['items'].grid.refresh();\n\t\t}, 300);\n\n\t}\n});",
+  "script": "frappe.ui.form.on('RFQ Comparison Sheet', {\n\trefresh: function(frm) {\n\t\tfrm.fields_dict['items'].grid.update_docfield_property('supplier', 'formatter', function(value) {\n\t\t\treturn `<div style=\"overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;\" title=\"${value || ''}\">${value || ''}</div>`;\n\t\t});\n\t\t['price_score', 'lead_time_score', 'weighted_mark'].forEach(function(fieldname) {\n\t\t\tfrm.fields_dict['items'].grid.update_docfield_property(fieldname, 'formatter', function(value) {\n\t\t\t\tif (value === null || value === undefined) return '';\n\t\t\t\treturn parseFloat(value).toFixed(2);\n\t\t\t});\n\t\t});\n\n\t\tsetTimeout(function() {\n\t\t\tfrm.fields_dict['items'].grid.refresh();\n\t\t}, 300);\n\n\t\tif (!frm.doc.__islocal && frm.doc.request_for_quotation) {\n\t\t\tfrm.add_custom_button(__('By Proposal Comparison'), function() {\n\t\t\t\tfrappe.set_route('query-report', 'RFQ Comparison - By Proposal', {rfq: frm.doc.request_for_quotation});\n\t\t\t}, __('View'));\n\t\t}\n\t}\n});\n",
   "view": "Form"
  },
  {

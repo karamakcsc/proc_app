@@ -206,11 +206,14 @@ def setup_report_permissions():
 	despite the role genuinely being able to read the underlying doctype. Same gap
 	applies to "Items Below Reorder Level" (ref_doctype Item) for Department Officer
 	and Procurement Officer — both already have read=1 on Item via SUPPORTING_DOCTYPES,
-	just not report=1."""
+	just not report=1. Same gap again for "RFQ Comparison - By Proposal" (ref_doctype
+	Request for Quotation): Procurement Officer already has read=1 via
+	setup_rfq_permissions(), just not report=1."""
 	grants = [
 		("Material Request", "Procurement Officer"),
 		("Item", "Department Officer"),
 		("Item", "Procurement Officer"),
+		("Request for Quotation", "Procurement Officer"),
 	]
 
 	for doctype, role in grants:

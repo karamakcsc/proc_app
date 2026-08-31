@@ -166,6 +166,51 @@ def generate_comparison_sheet(rfq_name):
 	return sheet.name
 
 
+def compute_by_proposal_ranking(comparison_items, total_item_count):
+	"""One unified list, not split arrays, per Yasser's explicit design feedback:
+	no separate hidden section for ineligible suppliers. comparison_items is the
+	flat list of by_item rows (plain dicts, matching get_comparison_sheet()'s own
+	real data shape — not objects, so dict access is used throughout, not attribute
+	access). Shared by proc_portal (get_comparison_sheet) and proc_app (the "RFQ
+	Comparison - By Proposal" desk report) -- lives here since proc_portal already
+	depends on proc_app, never the reverse (proc_portal/hooks.py's own app_description)."""
+	supplier_scores = {}
+	for row in comparison_items:
+		supplier_scores.setdefault(row["supplier"], []).append(row)
+
+	all_suppliers = []
+	for supplier, rows in supplier_scores.items():
+		marks = [r["weighted_mark"] for r in rows]
+		price_scores = [r["price_score"] for r in rows]
+		lead_time_scores = [r["lead_time_score"] for r in rows]
+		is_complete = len(marks) == total_item_count
+		all_suppliers.append({
+			"supplier": supplier,
+			"items_quoted": len(marks),
+			"items_missing": total_item_count - len(marks),
+			"average_mark": (sum(marks) / len(marks)) if marks else 0,
+			"average_price_score": (sum(price_scores) / len(price_scores)) if price_scores else 0,
+			"average_lead_time_score": (sum(lead_time_scores) / len(lead_time_scores)) if lead_time_scores else 0,
+			"eligible": is_complete,
+			# True only if every one of this supplier's own item-rows is currently
+			# selected -- the real, persisted "is this the active whole-proposal
+			# choice" state, not a re-derivation of eligibility/rank.
+			"is_proposal_selected": all(r.get("is_selected") for r in rows),
+		})
+
+	# Rank only among eligible suppliers; ineligible get no rank
+	eligible_sorted = sorted([s for s in all_suppliers if s["eligible"]], key=lambda x: x["average_mark"], reverse=True)
+	for i, row in enumerate(eligible_sorted):
+		row["rank"] = i + 1
+	for row in all_suppliers:
+		if not row["eligible"]:
+			row["rank"] = None
+
+	# Final unified list: eligible (ranked) first, then ineligible, for a clean top-to-bottom read
+	ineligible_unsorted = [s for s in all_suppliers if not s["eligible"]]
+	return eligible_sorted + ineligible_unsorted
+
+
 @frappe.whitelist()
 def generate_purchase_orders_from_comparison(rfq_name):
 	"""Generates one Purchase Order per distinct winning supplier from an RFQ's
