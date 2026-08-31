@@ -39,5 +39,16 @@ body {
 	font-family: 'Inter', -apple-system, sans-serif;
 	font-size: 14px;
 	line-height: 1.5;
-	padding: 4px 2px;
+	padding: 32px; /* matches .portal-main's own padding in portal.css */
+}
+
+/* portal.css only styles h1 as ".portal-main h1" -- scoped to a class this
+   page doesn't use, so it never applies here, and the h1 was falling
+   through to desk's own Bootstrap heading scale (h1, .h1 { font-size:
+   1.75rem } -- confirmed in the compiled desk.bundle.css) instead. Values
+   below are copied from .portal-main h1 itself for visual parity. */
+.rfq-comparison-page h1 {
+	font-size: 22px;
+	font-weight: 600;
+	margin: 0 0 20px;
 }
