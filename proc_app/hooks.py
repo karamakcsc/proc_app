@@ -9,7 +9,17 @@ after_migrate = "proc_app.setup.after_migrate"
 
 fixtures = [
 	{"dt": "DocType", "filters": [["name", "in", ["Purchase Order Amendment", "RFQ Comparison Sheet", "RFQ Comparison Sheet Item"]]]},
-	{"dt": "Custom Field", "filters": [["dt", "in", ["Material Request", "Department", "Purchase Order", "Purchase Invoice", "Supplier", "Request for Quotation", "Contract"]]]},
+	{"dt": "Custom Field", "filters": [["name", "in", [
+		"Material Request-workflow_state", "Request for Quotation-workflow_state", "Department-department_manager",
+		"Supplier-portal_onboarding_status", "Department-department_officer", "Purchase Invoice-contract",
+		"Supplier-commercial_registration_no", "Department-default_warehouse", "Purchase Order-contract",
+		"Supplier-onboarding_submitted_on", "Supplier-onboarding_reviewed_by", "Material Request-requesting_department",
+		"Request for Quotation-price_weight", "Material Request-concerned_department", "Request for Quotation-lead_time_weight",
+		"Material Request-source_material_request", "Contract-contract_value", "Contract-contract_category",
+		"Contract-renewed_from", "Contract-auto_renew", "Contract-workflow_state", "Contract-termination_date",
+		"Contract-termination_reason", "Contract-terminated_by", "Purchase Order-supplier_acknowledged",
+		"Purchase Order-supplier_acknowledged_on", "Purchase Order-supplier_acknowledgment_note",
+	]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval", "Terminated"]]]},
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase", "Terminate"]]]},
