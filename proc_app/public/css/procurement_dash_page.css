@@ -43,3 +43,15 @@ body {
 	font-weight: 600;
 	margin: 0 0 20px;
 }
+
+/* Drill-down stat cards -- cursor + a subtle hover lift, class-based (never
+   inline alongside the card's own x-show), matching the v1.72 grid-class
+   rule: nothing here fights x-show's own inline style.display toggling. */
+.dashboard-stat-card-link {
+	cursor: pointer;
+	transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.dashboard-stat-card-link:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

@@ -95,13 +95,25 @@ function build_page_html() {
 
 	html += '<div x-show="loading" style="color:var(--text-muted); padding:20px;">' + __('Loading...') + '</div>';
 
+	// Exact drill-down filters for each card, matching get_dashboard_summary()'s
+	// own query criteria field-for-field (see PROC_APP_SPEC.md for the
+	// verification that each drill-down's count matches its card). Dates are
+	// computed once, here, via the same frappe.datetime utilities the desk
+	// list-view filter bar itself would produce.
+	var this_month_start = frappe.datetime.get_today().slice(0, 8) + '01';
+	var today = frappe.datetime.get_today();
+	var today_plus_30 = frappe.datetime.add_days(today, 30);
+
 	html += '<div x-show="!loading" class="dashboard-stat-grid">';
 	html += stat_card('var(--kcsc-sky)', 'summary.open_material_requests', __('Open Requests'),
-		'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z');
+		'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
+		{ doctype: 'Material Request', filters: { docstatus: ['!=', 2], workflow_state: ['not in', ['Approved - Issue', 'Approved - Purchase', 'Rejected', 'Forwarded to Purchase']] } });
 	html += stat_card('var(--kcsc-indigo)', 'summary.active_rfqs', __('Active RFQs'),
-		'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z');
+		'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z',
+		{ doctype: 'Request for Quotation', filters: { workflow_state: 'Approved', docstatus: 1 } });
 
-	html += '<div style="background:var(--kcsc-green); border-radius:12px; padding:1.1rem; display:flex; align-items:center; justify-content:space-between; color:white;">'
+	html += '<div class="dashboard-stat-card-link"' + build_drilldown_attr({ doctype: 'Purchase Order', filters: { docstatus: 1, transaction_date: ['>=', this_month_start] } })
+		+ ' style="background:var(--kcsc-green); border-radius:12px; padding:1.1rem; display:flex; align-items:center; justify-content:space-between; color:white;">'
 		+ '<div>'
 		+ '<p style="font-size:26px; font-weight:700; margin:0;" x-text="summary.pos_this_month_count"></p>'
 		+ '<p style="font-size:11px; margin:4px 0 0; text-transform:uppercase; letter-spacing:0.04em; opacity:0.9;">' + __('POs This Month') + '</p>'
@@ -109,11 +121,14 @@ function build_page_html() {
 		+ '</div>' + stat_icon('M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z') + '</div>';
 
 	html += stat_card('var(--kcsc-amber)', 'summary.contracts_expiring_soon', __('Contracts Expiring'),
-		'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5');
+		'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5',
+		{ doctype: 'Contract', filters: { status: 'Active', end_date: [['>=', today], ['<=', today_plus_30]] } });
 	html += stat_card('var(--kcsc-amber)', 'summary.unbilled_pos', __('Unbilled POs'),
-		'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z');
+		'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z',
+		{ doctype: 'Purchase Order', filters: { docstatus: 1, per_billed: ['<', 100] } });
 	html += stat_card('var(--portal-danger)', 'summary.invoices_awaiting_payment', __('Awaiting Payment'),
-		'M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z');
+		'M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z',
+		{ doctype: 'Purchase Invoice', filters: { docstatus: 1, outstanding_amount: ['>', 0] } });
 	html += '</div>';
 
 	html += '<div x-show="!loading" class="dashboard-chart-grid">';
@@ -159,13 +174,31 @@ function stat_icon(path_d) {
 		+ '<path stroke-linecap="round" stroke-linejoin="round" d="' + path_d + '" /></svg>';
 }
 
-function stat_card(bg, x_text_expr, label, path_d) {
-	return '<div style="background:' + bg + '; border-radius:12px; padding:1.1rem; display:flex; align-items:center; justify-content:space-between; color:white;">'
+// drilldown, when given, is {doctype, filters} -- the exact set the stat's
+// own get_dashboard_summary() query counts (see build_drilldown_attr()).
+// The link is a plain data-attribute + delegated click handler (matching
+// the existing .rfq-po-link pattern in rfq_comparison.js), not an Alpine
+// @click, so the same JSON-in-attribute safety rule applies: esc() before
+// embedding, JSON.parse() on click.
+function stat_card(bg, x_text_expr, label, path_d, drilldown) {
+	var link_attrs = drilldown
+		? ' class="dashboard-stat-card-link"' + build_drilldown_attr(drilldown)
+		: '';
+	return '<div' + link_attrs + ' style="background:' + bg + '; border-radius:12px; padding:1.1rem; display:flex; align-items:center; justify-content:space-between; color:white;">'
 		+ '<div>'
 		+ '<p style="font-size:26px; font-weight:700; margin:0;" x-text="' + x_text_expr + '"></p>'
 		+ '<p style="font-size:11px; margin:4px 0 0; text-transform:uppercase; letter-spacing:0.04em; opacity:0.9;">' + label + '</p>'
 		+ '</div>' + stat_icon(path_d) + '</div>';
 }
+
+function build_drilldown_attr(drilldown) {
+	return ' data-drilldown="' + esc(JSON.stringify(drilldown)) + '"';
+}
+
+$(document).on('click', '.dashboard-stat-card-link', function () {
+	var payload = JSON.parse(this.dataset.drilldown);
+	frappe.set_route('List', payload.doctype, payload.filters);
+});
 
 function chart_card(title, legend_id, canvas_id) {
 	return '<div class="rich-card" style="padding:1rem;">'
