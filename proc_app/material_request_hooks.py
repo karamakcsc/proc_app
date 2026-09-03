@@ -2,7 +2,15 @@ import frappe
 
 def on_material_request_update(doc, method):
 	"""Spawns a linked Purchase-type Material Request when the original transitions
-	to 'Forwarded to Purchase', and stops the original via ERPNext's native mechanism."""
+	to 'Forwarded to Purchase', and stops the original via ERPNext's native mechanism.
+	cost_center is carried across item-by-item -- same "would silently drop it"
+	risk class as the attachment-copy step below, and the more consequential one:
+	the original's own Material Issue type never triggers budget validation at
+	all (Material Request.on_submit() only calls validate_budget() for type
+	"Purchase"), so this spawn is the FIRST point in the whole chain where a
+	portal requester's chosen cost center can actually reach a document that
+	gets budget-checked on submit (PROC_PORTAL_SPEC.md's cost-center-on-New-Request
+	entry)."""
 
 	if doc.workflow_state != "Forwarded to Purchase":
 		return
@@ -33,6 +41,7 @@ def on_material_request_update(doc, method):
 				"qty": item.qty,
 				"schedule_date": item.schedule_date,
 				"warehouse": item.warehouse,
+				"cost_center": item.cost_center,
 			}
 			for item in doc.items
 		],
