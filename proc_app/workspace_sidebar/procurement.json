@@ -1,6 +1,6 @@
 {
  "app": "proc_app",
- "creation": "2026-09-03 16:05:57.514781",
+ "creation": "2026-09-03 16:42:32.608119",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "buying",
@@ -15,6 +15,18 @@
    "label": "Home",
    "link_to": "Procurement",
    "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "layout-dashboard",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "procurement-dash",
+   "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -193,7 +205,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-03 16:41:25.214039",
+ "modified": "2026-09-03 17:15:02.318949",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",

@@ -35,6 +35,21 @@
     "dependencies": null,
     "description": null,
     "hidden": 0,
+    "icon": "layout-dashboard",
+    "is_query_report": 0,
+    "label": "Dashboard",
+    "link_count": 0,
+    "link_to": "procurement-dash",
+    "link_type": "Page",
+    "onboard": 0,
+    "only_for": null,
+    "report_ref_doctype": null,
+    "type": "Link"
+   },
+   {
+    "dependencies": null,
+    "description": null,
+    "hidden": 0,
     "icon": null,
     "is_query_report": 0,
     "label": "Material Request",
@@ -257,7 +272,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2026-09-01 01:21:38.113328",
+  "modified": "2026-09-03 17:15:01.324649",
   "module": "Proc App",
   "name": "Procurement",
   "number_cards": [],

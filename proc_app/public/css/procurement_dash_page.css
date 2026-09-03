@@ -1,0 +1,45 @@
+/* Cascade-scoping override for portal.css, loaded into desk for the
+   Procurement Dashboard custom page -- same approach as
+   rfq_comparison_page.css (see PROC_APP_SPEC.md for the full collision
+   writeup that page's build originally worked out). Loaded via
+   frappe.require() immediately AFTER portal.css in the same array, so this
+   file always wins any cascade tie against portal.css's own rules.
+
+   portal.css ships two genuinely unscoped selectors that leak into desk:
+     * { box-sizing: border-box; }   -- confirmed harmless: Bootstrap's own
+                                         reboot already sets this identically.
+     body { background/color/font-family/font-size/line-height/margin }
+                                      -- NOT harmless: frappe.require() never
+                                         removes a loaded <link>, so without
+                                         this override portal.css's body rule
+                                         would permanently re-theme every
+                                         other desk screen for the rest of
+                                         the browser session, not just this
+                                         page. */
+body {
+	background: revert;
+	color: revert;
+	font-family: revert;
+	font-size: revert;
+	line-height: revert;
+	margin: revert;
+}
+
+.procurement-dashboard-page {
+	background: var(--portal-bg);
+	color: var(--portal-text);
+	font-family: 'Inter', -apple-system, sans-serif;
+	font-size: 14px;
+	line-height: 1.5;
+	padding: 32px; /* matches .portal-main's own padding in portal.css */
+}
+
+/* portal.css only styles h1 as ".portal-main h1" -- scoped to a class this
+   page doesn't use, so it never applies here, and the h1 would otherwise
+   fall through to desk's own Bootstrap heading scale (h1, .h1 { font-size:
+   1.75rem }). Values below are copied from .portal-main h1 for parity. */
+.procurement-dashboard-page h1 {
+	font-size: 22px;
+	font-weight: 600;
+	margin: 0 0 20px;
+}
