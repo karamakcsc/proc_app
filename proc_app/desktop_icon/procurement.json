@@ -1,0 +1,22 @@
+{
+ "app": "proc_app",
+ "bg_color": "gray",
+ "creation": "2026-09-03 15:44:35.373408",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "buying",
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Procurement",
+ "link_to": "Procurement",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-09-03 15:44:35.373408",
+ "modified_by": "Administrator",
+ "name": "Procurement",
+ "owner": "Administrator",
+ "parent_icon": "ERPNext",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}
