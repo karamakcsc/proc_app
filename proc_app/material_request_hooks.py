@@ -31,22 +31,34 @@ def validate_department_company(doc, method):
 			)
 
 def propagate_cost_center(doc, method):
-	"""Server-side safety net for the desk 'Cost Center' (set_cost_center) header
-	field -- mirrors the Client Script (Material Request Set Cost Center) exactly:
-	fills blank item rows only, never overwrites a row where a different cost
-	center was deliberately set. Deliberately NOT unconditional-overwrite like
-	ERPNext's own set_warehouse (see erpnext/public/js/controllers/transaction.js's
-	autofill_warehouse()) -- cost center drives budget checking, so silently
-	clobbering a row would be a real data-integrity problem, not just a lost
-	convenience default. Runs on validate() (before the item rows are actually
-	persisted), so an API- or import-created document that sets set_cost_center
-	but never touches the desk form behaves identically to one built through it,
-	where the Client Script wouldn't have run at all."""
+	"""Server-side counterpart to the desk 'Cost Center' (set_cost_center) header
+	field's Client Script (Material Request Set Cost Center) -- Yasser's explicit
+	choice (superseding the earlier fill-blanks-only decision, PROC_APP_SPEC.md
+	v1.78): overwrite every item row when set_cost_center genuinely CHANGES,
+	mirroring ERPNext's own autofill_warehouse() (erpnext/public/js/controllers/
+	transaction.js) -- but do NOT re-apply on every save, so a per-row edit made
+	afterwards survives a later save where the header field itself didn't change.
+	Runs on before_validate (before the item rows are persisted), so a document
+	built via desk, the portal, or any other API path all behave identically --
+	the Client Script only covers the desk form.
+
+	"Changed" is determined by comparing against get_doc_before_save() rather than
+	just "is set_cost_center truthy", which would reapply on every single save
+	exactly like the old fill-blanks behavior did. get_doc_before_save() returns
+	None for a brand-new document (confirmed via frappe/model/document.py's
+	load_doc_before_save(): it returns immediately, before populating
+	_doc_before_save, when self.is_new() is true) -- treated here as "changed",
+	since a new document setting set_cost_center has no prior state to compare
+	against and should apply to every row, matching the Client Script's own
+	behavior for a freshly-filled-in form."""
 	if not doc.get("set_cost_center"):
 		return
+	before = doc.get_doc_before_save()
+	changed = before is None or before.get("set_cost_center") != doc.set_cost_center
+	if not changed:
+		return
 	for item in doc.items:
-		if not item.cost_center:
-			item.cost_center = doc.set_cost_center
+		item.cost_center = doc.set_cost_center
 
 def on_material_request_update(doc, method):
 	"""Spawns a linked Purchase-type Material Request when the original transitions
