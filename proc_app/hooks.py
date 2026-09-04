@@ -30,12 +30,15 @@ fixtures = [
 	{"dt": "Workspace", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Workspace Sidebar", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Desktop Icon", "filters": [["link_to", "=", "Procurement"]]},
-	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center"]]]},
+	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center", "Material Request Department Company Filter"]]]},
 ]
 
 doc_events = {
 	"Material Request": {
-		"before_validate": "proc_app.material_request_hooks.propagate_cost_center",
+		"before_validate": [
+			"proc_app.material_request_hooks.validate_department_company",
+			"proc_app.material_request_hooks.propagate_cost_center",
+		],
 		"on_update": "proc_app.material_request_hooks.on_material_request_update",
 	},
 }

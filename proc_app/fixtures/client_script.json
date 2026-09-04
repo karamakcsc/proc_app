@@ -64,5 +64,16 @@
   "name": "Material Request Set Cost Center",
   "script": "frappe.ui.form.on('Material Request', {\n\tonload: function(frm) {\n\t\t// Mirrors set_warehouse/set_from_warehouse's own company-scoping filter on\n\t\t// this same doctype (material_request.js) -- a group Cost Center can't be\n\t\t// budgeted against, and another company's is invalid here.\n\t\tfrm.set_query('set_cost_center', function(doc) {\n\t\t\treturn {\n\t\t\t\tfilters: {\n\t\t\t\t\tcompany: doc.company,\n\t\t\t\t\tis_group: 0,\n\t\t\t\t},\n\t\t\t};\n\t\t});\n\t},\n\tset_cost_center: function(frm) {\n\t\t// Deliberately NOT mirroring set_warehouse's own autofill_warehouse()\n\t\t// (transaction.js), which overwrites every row unconditionally. Cost\n\t\t// center drives budget checking, so silently clobbering a row where\n\t\t// someone deliberately set a different cost center would be a real\n\t\t// data-integrity problem, not just a convenience default -- fills\n\t\t// blank rows only.\n\t\tif (!frm.doc.set_cost_center) return;\n\t\t(frm.doc.items || []).forEach(function(item) {\n\t\t\tif (!item.cost_center) {\n\t\t\t\tfrappe.model.set_value(item.doctype, item.name, 'cost_center', frm.doc.set_cost_center);\n\t\t\t}\n\t\t});\n\t}\n});\n\nfrappe.ui.form.on('Material Request Item', {\n\t// Matches ERPNext's own items_add handler for set_warehouse (transaction.js)\n\t// exactly: a newly added row with no cost center of its own picks up the\n\t// header default -- this direction was already blank-only in the native\n\t// behavior, no deviation needed here.\n\titems_add: function(frm, cdt, cdn) {\n\t\tvar item = frappe.get_doc(cdt, cdn);\n\t\tif (!item.cost_center && frm.doc.set_cost_center) {\n\t\t\titem.cost_center = frm.doc.set_cost_center;\n\t\t}\n\t}\n});\n",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Material Request",
+  "enabled": 1,
+  "modified": "2026-09-04 03:33:35.179536",
+  "module": null,
+  "name": "Material Request Department Company Filter",
+  "script": "frappe.ui.form.on('Material Request', {\n\tonload: function(frm) {\n\t\t// Filtering prevents an invalid choice from being made in the first place;\n\t\t// server-side validation (proc_app.material_request_hooks.validate_department_company,\n\t\t// before_validate) is the real enforcement -- this is UI convenience only,\n\t\t// same relationship as the New Request portal form's own client-side filter\n\t\t// (new.html's filteredRequestingDepartments/filteredDepartments getters) to\n\t\t// its own server-side check in create_request(). A department whose own\n\t\t// company doesn't match this document's company would otherwise later break\n\t\t// the Forward-to-Purchase spawn (see material_request_hooks.py).\n\t\tvar department_filter = function(doc) {\n\t\t\treturn {\n\t\t\t\tfilters: {\n\t\t\t\t\tcompany: doc.company,\n\t\t\t\t\tis_group: 0,\n\t\t\t\t},\n\t\t\t};\n\t\t};\n\t\tfrm.set_query('requesting_department', department_filter);\n\t\tfrm.set_query('concerned_department', department_filter);\n\t}\n});\n",
+  "view": "Form"
  }
 ]

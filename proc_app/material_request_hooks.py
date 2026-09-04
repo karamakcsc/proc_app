@@ -1,5 +1,35 @@
 import frappe
 
+def validate_department_company(doc, method):
+	"""Cross-company department guard for the desk (and any other API path that
+	doesn't go through proc_portal's create_request(), which has its own copy of
+	this same check for concerned_department -- requesting_department can't
+	mismatch there, company is derived from it directly; here, in the desk, either
+	field can be set to any department regardless of company, so both are checked).
+	This is the real fix for a live bug: a Material Request created with
+	company="KCSC (Demo)" but requesting_department="Accounts - K" (a KCSC
+	department) later broke the Forward-to-Purchase spawn -- material_request_hooks.py's
+	on_material_request_update() now correctly copies company from the source
+	document rather than re-deriving it from the department, but that only stops
+	an already-mismatched request from corrupting its spawn further. Rejecting the
+	mismatch here, at creation/save, stops it from ever existing in the first
+	place. A blank Department.company is treated as "any company" -- confirmed
+	live that only the root "All Departments" group node has one, never a real,
+	selectable leaf department."""
+	for fieldname, label in (
+		("requesting_department", "Requesting Department"),
+		("concerned_department", "Concerned Department"),
+	):
+		department = doc.get(fieldname)
+		if not department:
+			continue
+		dept_company = frappe.db.get_value("Department", department, "company")
+		if dept_company and dept_company != doc.company:
+			frappe.throw(
+				f"{label} '{department}' belongs to company '{dept_company}', but this request is for "
+				f"'{doc.company}'. Please select a department from the correct company."
+			)
+
 def propagate_cost_center(doc, method):
 	"""Server-side safety net for the desk 'Cost Center' (set_cost_center) header
 	field -- mirrors the Client Script (Material Request Set Cost Center) exactly:
@@ -40,9 +70,30 @@ def on_material_request_update(doc, method):
 	if frappe.db.exists("Material Request", {"source_material_request": doc.name}):
 		return  # safety net against duplicate spawning
 
-	company = frappe.db.get_value("Department", doc.requesting_department, "company")
+	# Copy company from the source document -- do NOT re-derive it from
+	# requesting_department. The v1.36 fix that introduced deriving from the
+	# department was solving a different, real problem: new_doc never set
+	# company at all, so it silently fell back to ERPNext's own ambient/session
+	# default. Deriving from the department was one way to plug that gap, but
+	# it re-introduced the same class of bug the moment a document's own
+	# requesting_department belongs to a DIFFERENT company than the document
+	# itself (a real case found live: a KCSC (Demo) request with a KCSC
+	# requesting_department spawned a Purchase-type doc with company=KCSC,
+	# while its copied item rows still carried KCSC (Demo) cost centers,
+	# throwing AccountsController.validate_company()'s "Cost Center ... does
+	# not belong to the Company" the instant it tried to save). doc.company is
+	# mandatory on this doctype (reqd=1) and this hook only ever runs on an
+	# already-validated, already-saved source document (on_update fires
+	# post-save) -- it cannot genuinely be empty here, so a copy is always
+	# correct and a "derive if empty" fallback would guard against a case that
+	# cannot occur. Do not "helpfully" revert this back to a department
+	# lookup -- see proc_portal's create_request()/before_validate department
+	# validation (PROC_APP_SPEC.md / PROC_PORTAL_SPEC.md) for the real fix to
+	# v1.36's underlying scenario: reject a mismatched department at creation,
+	# not paper over it here.
+	company = doc.company
 	if not company:
-		frappe.throw(f"Could not determine company for department {doc.requesting_department}")
+		frappe.throw(f"Material Request {doc.name} has no company set — cannot spawn a linked Purchase request.")
 
 	new_doc = frappe.get_doc({
 		"doctype": "Material Request",
