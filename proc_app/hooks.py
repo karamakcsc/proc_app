@@ -19,6 +19,7 @@ fixtures = [
 		"Contract-renewed_from", "Contract-auto_renew", "Contract-workflow_state", "Contract-termination_date",
 		"Contract-termination_reason", "Contract-terminated_by", "Purchase Order-supplier_acknowledged",
 		"Purchase Order-supplier_acknowledged_on", "Purchase Order-supplier_acknowledgment_note",
+		"Material Request-set_cost_center",
 	]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval", "Terminated"]]]},
@@ -29,11 +30,12 @@ fixtures = [
 	{"dt": "Workspace", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Workspace Sidebar", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Desktop Icon", "filters": [["link_to", "=", "Procurement"]]},
-	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons"]]]},
+	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center"]]]},
 ]
 
 doc_events = {
 	"Material Request": {
+		"before_validate": "proc_app.material_request_hooks.propagate_cost_center",
 		"on_update": "proc_app.material_request_hooks.on_material_request_update",
 	},
 }

@@ -1,5 +1,23 @@
 import frappe
 
+def propagate_cost_center(doc, method):
+	"""Server-side safety net for the desk 'Cost Center' (set_cost_center) header
+	field -- mirrors the Client Script (Material Request Set Cost Center) exactly:
+	fills blank item rows only, never overwrites a row where a different cost
+	center was deliberately set. Deliberately NOT unconditional-overwrite like
+	ERPNext's own set_warehouse (see erpnext/public/js/controllers/transaction.js's
+	autofill_warehouse()) -- cost center drives budget checking, so silently
+	clobbering a row would be a real data-integrity problem, not just a lost
+	convenience default. Runs on validate() (before the item rows are actually
+	persisted), so an API- or import-created document that sets set_cost_center
+	but never touches the desk form behaves identically to one built through it,
+	where the Client Script wouldn't have run at all."""
+	if not doc.get("set_cost_center"):
+		return
+	for item in doc.items:
+		if not item.cost_center:
+			item.cost_center = doc.set_cost_center
+
 def on_material_request_update(doc, method):
 	"""Spawns a linked Purchase-type Material Request when the original transitions
 	to 'Forwarded to Purchase', and stops the original via ERPNext's native mechanism.
