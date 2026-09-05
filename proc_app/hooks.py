@@ -20,6 +20,8 @@ fixtures = [
 		"Contract-termination_reason", "Contract-terminated_by", "Purchase Order-supplier_acknowledged",
 		"Purchase Order-supplier_acknowledged_on", "Purchase Order-supplier_acknowledgment_note",
 		"Material Request-set_cost_center", "Material Request-budget_preview_html", "Material Request-budget_tab",
+		"Purchase Order-budget_tab", "Purchase Order-budget_preview_html",
+		"Purchase Invoice-budget_tab", "Purchase Invoice-budget_preview_html",
 	]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval", "Terminated"]]]},
@@ -30,7 +32,7 @@ fixtures = [
 	{"dt": "Workspace", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Workspace Sidebar", "filters": [["name", "in", ["Procurement"]]]},
 	{"dt": "Desktop Icon", "filters": [["link_to", "=", "Procurement"]]},
-	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center", "Material Request Department Company Filter"]]]},
+	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center", "Material Request Department Company Filter", "Purchase Order Budget Impact", "Purchase Invoice Budget Impact"]]]},
 ]
 
 doc_events = {
