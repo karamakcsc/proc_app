@@ -279,7 +279,7 @@
     "url": null
    },
    {
-    "child": 0,
+    "child": 1,
     "collapsible": 1,
     "filters": null,
     "icon": null,
@@ -295,7 +295,7 @@
     "url": null
    }
   ],
-  "modified": "2026-09-05 22:46:18.877862",
+  "modified": "2026-09-05 22:56:58.806739",
   "module": "Proc App",
   "module_onboarding": null,
   "name": "Procurement",
