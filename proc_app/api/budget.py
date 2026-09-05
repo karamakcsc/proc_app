@@ -164,6 +164,198 @@ def _worse_status(a, b):
 	return a if _STATUS_SEVERITY[a] >= _STATUS_SEVERITY[b] else b
 
 
+def _build_results(doctype, config, validation, draft_keys, subtract_draft):
+	"""Shared per-key aggregation for both get_budget_preview() (a client-
+	supplied draft, always subtract_draft=True -- the draft doesn't exist in
+	the DB yet, so none of the queried figures include it) and
+	get_budget_preview_for_document() (a real, already-existing document,
+	which may be docstatus 0 or 1 -- subtract_draft is False for an already-
+	submitted document, since its own amount is already inside the queried
+	figures and subtracting it again would double-count it, understating
+	remaining by exactly its own amount. Confirmed live: a real submitted
+	Material Request's own 400,000 amount was found to be the ENTIRE content
+	of requested_amount for its key -- see PROC_PORTAL_SPEC.md's Request
+	Detail panel entry for the full reconciliation)."""
+	results = []
+	seen_keys = set()
+	for key, v in validation.to_validate.items():
+		dimension_field, dimension_value, account = key
+		seen_keys.add(key)
+
+		validation.get_ordered_amount(key)
+		validation.get_requested_amount(key)
+		validation.get_actual_expense(key)
+
+		if doctype == "Purchase Invoice":
+			# initialize_dict() names this gl_to_process for a GL Map, and
+			# each synthetic entry carries debit/credit rather than amount.
+			this_amount = sum(flt(x.debit) - flt(x.credit) for x in v.gl_to_process)
+		else:
+			this_amount = sum(flt(row.amount) for row in v.items_to_process)
+		requested_amount = flt(v.requested_amount)
+		ordered_amount = flt(v.ordered_amount)
+		actual_expense = flt(v.actual_expense)
+		budget_amount = flt(v.budget_amount)
+		accumulated_monthly_budget = flt(v.accumulated_monthly_budget)
+
+		# CRITICAL, found only by reconciling a live PO-stage test against real
+		# enforcement: requested/ordered/actual are each checked INDEPENDENTLY
+		# against the FULL budget_amount -- handle_material_request_overlimit()/
+		# handle_purchase_order_overlimit()/handle_actual_expense_overlimit()
+		# each pass only their OWN bucket's existing_amt to
+		# handle_individual_doctype_action(), which computes
+		# "(existing_amt + current_amt) - budget_amt" using nothing else. They
+		# are only ever summed together by a distinct, opt-in mechanism --
+		# handle_cumulative_overlimit(), gated on applicable_on_cumulative_expense,
+		# worded "collectively exceeded" in its own messages, using its own
+		# separate action fields -- which none of this project's real Budget
+		# records have enabled.
+		bucket_values = {
+			"requested_amount": requested_amount,
+			"ordered_amount": ordered_amount,
+			"actual_expense": actual_expense,
+		}
+		own_amount_before = bucket_values[config["own_bucket"]]
+		remaining_before = budget_amount - own_amount_before
+		monthly_remaining_before = accumulated_monthly_budget - own_amount_before
+
+		# The one real difference between the two callers: an unsaved draft's
+		# own amount is not yet in own_amount_before at all, so it must be
+		# subtracted here to show what submitting now would do. An already-
+		# submitted document's own amount is already IN own_amount_before
+		# (the query itself counted it, docstatus=1) -- subtracting this_amount
+		# again would double it.
+		subtract = this_amount if subtract_draft else 0
+		remaining_after = remaining_before - subtract
+		monthly_remaining_after = monthly_remaining_before - subtract
+
+		status = _classify(
+			remaining_after,
+			monthly_remaining_after,
+			v.budget_doc.get(config["action_annual_field"]),
+			v.budget_doc.get(config["action_monthly_field"]),
+		)
+
+		if v.budget_doc.get("applicable_on_cumulative_expense"):
+			combined_after = requested_amount + ordered_amount + actual_expense + subtract
+			cumulative_status = _classify(
+				budget_amount - combined_after,
+				accumulated_monthly_budget - combined_after,
+				v.budget_doc.get("action_if_annual_exceeded_on_cumulative_expense"),
+				v.budget_doc.get("action_if_accumulated_monthly_exceeded_on_cumulative_expense"),
+			)
+			status = _worse_status(status, cumulative_status)
+
+		results.append(
+			{
+				"cost_center": dimension_value,
+				"account": account,
+				"budget_amount": budget_amount,
+				"actual_expense": actual_expense,
+				"ordered_amount": ordered_amount,
+				"requested_amount": requested_amount,
+				config["draft_amount_key"]: this_amount,
+				"already_counted": not subtract_draft,
+				"remaining_before": remaining_before,
+				"remaining_after": remaining_after,
+				"status": status,
+			}
+		)
+
+	for dimension_field, dimension_value, account in draft_keys - seen_keys:
+		results.append(
+			{
+				"cost_center": dimension_value,
+				"account": account,
+				"budget_amount": None,
+				"status": "no_budget",
+				"message": f"No budget configured for cost center '{dimension_value}' and account '{account}'.",
+			}
+		)
+
+	return results
+
+
+@frappe.whitelist()
+def get_budget_preview_for_document(doctype, name):
+	"""Server-derived budget preview for an EXISTING, already-created document
+	(proc_portal's Request Detail page) -- unlike get_budget_preview() (a
+	client-supplied draft that doesn't exist in the DB yet), this derives
+	company/items/cost_center from the real, saved document itself, since it's
+	authoritative once it exists. Takes the document name only, not item rows
+	from the caller -- the page has no business re-deriving what a saved
+	document already knows about itself.
+
+	CRITICAL: the document may be docstatus 0 (draft) or 1 (submitted).
+	get_ordered_amount()/get_requested_amount()/get_actual_expense() filter on
+	docstatus=1, so a submitted document's own amount is already inside those
+	queried figures -- adding it again (the way a draft's is, in
+	get_budget_preview()) would double-count it. Verified live before writing
+	this: a real submitted Material Request's own 400,000 amount was found to
+	be the entire content of requested_amount for its key, not merely a part
+	of it. So: subtract_draft is True only when doc.docstatus == 0; for a
+	submitted document, this_request_amount/this_order_amount/
+	this_invoice_amount is still returned (labelled via already_counted=True)
+	purely for context -- "this is what this document itself contributed" --
+	without touching remaining_before/remaining_after a second time.
+
+	frappe.get_doc() itself enforces the real DocPerm read check -- no
+	portal-side authorization logic duplicated here."""
+	if doctype not in _DOCTYPE_CONFIG:
+		frappe.throw(f"Budget preview is not supported for doctype {doctype}.")
+	config = _DOCTYPE_CONFIG[doctype]
+
+	doc = frappe.get_doc(doctype, name)
+	is_draft = doc.docstatus == 0
+
+	item_rows = []
+	for row in doc.items:
+		if row.cost_center and row.expense_account:
+			item_rows.append(
+				frappe._dict(
+					{
+						"item_code": row.item_code,
+						"amount": flt(row.amount),
+						"cost_center": row.cost_center,
+						"expense_account": row.expense_account,
+					}
+				)
+			)
+
+	draft_keys = {("cost_center", row.cost_center, row.expense_account) for row in item_rows}
+	if not draft_keys:
+		return []
+
+	if doctype == "Purchase Invoice":
+		# Same synthetic-gl_map mechanism as get_budget_preview() -- see that
+		# function's own docstring for why Purchase Invoice needs it (
+		# BudgetValidation.build_item_keys() doesn't populate from .items for
+		# this doctype at all). A submitted invoice's real GL Entries already
+		# exist and are already counted by get_actual_expense()'s own query;
+		# this synthetic entry only exists to build the (cost_center, account)
+		# KEY so the report can look the real query result up -- its debit is
+		# irrelevant whenever subtract_draft is False, since it's never added.
+		gl_map = [
+			frappe._dict(
+				{
+					"company": doc.company,
+					"posting_date": today(),
+					"account": row.expense_account,
+					"cost_center": row.cost_center,
+					"debit": row.amount,
+					"credit": 0,
+				}
+			)
+			for row in item_rows
+		]
+		validation = BudgetValidation(gl_map=gl_map)
+	else:
+		validation = BudgetValidation(doc=doc)
+
+	validation.build_validation_map()
+	return _build_results(doctype, config, validation, draft_keys, subtract_draft=is_draft)
+
+
 @frappe.whitelist()
 def get_budget_preview(doctype, company, items, cost_center=None):
 	"""Returns budget availability for the (cost_center, expense_account) keys
@@ -263,103 +455,8 @@ def get_budget_preview(doctype, company, items, cost_center=None):
 		validation = BudgetValidation(doc=doc)
 
 	validation.build_validation_map()
-
-	results = []
-	seen_keys = set()
-	for key, v in validation.to_validate.items():
-		dimension_field, dimension_value, account = key
-		seen_keys.add(key)
-
-		validation.get_ordered_amount(key)
-		validation.get_requested_amount(key)
-		validation.get_actual_expense(key)
-
-		# draft_amount kept separate from the queried figures -- those are
-		# committed spend that already exists (other submitted documents),
-		# draft_amount is only what THIS draft would add if submitted now.
-		if doctype == "Purchase Invoice":
-			# initialize_dict() names this gl_to_process for a GL Map, and
-			# each synthetic entry carries debit/credit rather than amount.
-			draft_amount = sum(flt(x.debit) - flt(x.credit) for x in v.gl_to_process)
-		else:
-			draft_amount = sum(flt(row.amount) for row in v.items_to_process)
-		requested_amount = flt(v.requested_amount)
-		ordered_amount = flt(v.ordered_amount)
-		actual_expense = flt(v.actual_expense)
-		budget_amount = flt(v.budget_amount)
-		accumulated_monthly_budget = flt(v.accumulated_monthly_budget)
-
-		# CRITICAL, found only by reconciling a live PO-stage test against real
-		# enforcement: requested/ordered/actual are each checked INDEPENDENTLY
-		# against the FULL budget_amount -- handle_material_request_overlimit()/
-		# handle_purchase_order_overlimit()/handle_actual_expense_overlimit()
-		# each pass only their OWN bucket's existing_amt to
-		# handle_individual_doctype_action(), which computes
-		# "(existing_amt + current_amt) - budget_amt" using nothing else. They
-		# are only ever summed together by a distinct, opt-in mechanism --
-		# handle_cumulative_overlimit(), gated on applicable_on_cumulative_expense,
-		# worded "collectively exceeded" in its own messages, using its own
-		# separate action fields -- which none of this project's real Budget
-		# records have enabled. An earlier version of this function summed all
-		# three buckets into one shared "used" total unconditionally, which
-		# reconciled fine only by coincidence in every prior MR-only test
-		# (ordered_amount/actual_expense were always 0 there) -- it disagreed
-		# with a real PO submission the moment an unrelated Material Request's
-		# own requested_amount was nonzero for the same key, exactly the
-		# silent-mismatch failure mode this whole feature exists to prevent.
-		bucket_values = {
-			"requested_amount": requested_amount,
-			"ordered_amount": ordered_amount,
-			"actual_expense": actual_expense,
-		}
-		own_amount_before = bucket_values[config["own_bucket"]]
-		remaining_before = budget_amount - own_amount_before
-		remaining_after = remaining_before - draft_amount
-
-		monthly_remaining_before = accumulated_monthly_budget - own_amount_before
-		monthly_remaining_after = monthly_remaining_before - draft_amount
-
-		status = _classify(
-			remaining_after,
-			monthly_remaining_after,
-			v.budget_doc.get(config["action_annual_field"]),
-			v.budget_doc.get(config["action_monthly_field"]),
-		)
-
-		if v.budget_doc.get("applicable_on_cumulative_expense"):
-			combined_after = requested_amount + ordered_amount + actual_expense + draft_amount
-			cumulative_status = _classify(
-				budget_amount - combined_after,
-				accumulated_monthly_budget - combined_after,
-				v.budget_doc.get("action_if_annual_exceeded_on_cumulative_expense"),
-				v.budget_doc.get("action_if_accumulated_monthly_exceeded_on_cumulative_expense"),
-			)
-			status = _worse_status(status, cumulative_status)
-
-		results.append(
-			{
-				"cost_center": dimension_value,
-				"account": account,
-				"budget_amount": budget_amount,
-				"actual_expense": actual_expense,
-				"ordered_amount": ordered_amount,
-				"requested_amount": requested_amount,
-				config["draft_amount_key"]: draft_amount,
-				"remaining_before": remaining_before,
-				"remaining_after": remaining_after,
-				"status": status,
-			}
-		)
-
-	for dimension_field, dimension_value, account in draft_keys - seen_keys:
-		results.append(
-			{
-				"cost_center": dimension_value,
-				"account": account,
-				"budget_amount": None,
-				"status": "no_budget",
-				"message": f"No budget configured for cost center '{dimension_value}' and account '{account}'.",
-			}
-		)
-
-	return results
+	# A client-supplied draft never exists in the DB yet, so its own amount is
+	# never part of any queried figure -- always subtract it. (Contrast
+	# get_budget_preview_for_document(), where subtract_draft depends on the
+	# real document's own docstatus.)
+	return _build_results(doctype, config, validation, draft_keys, subtract_draft=True)
