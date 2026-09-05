@@ -19,7 +19,7 @@ fixtures = [
 		"Contract-renewed_from", "Contract-auto_renew", "Contract-workflow_state", "Contract-termination_date",
 		"Contract-termination_reason", "Contract-terminated_by", "Purchase Order-supplier_acknowledged",
 		"Purchase Order-supplier_acknowledged_on", "Purchase Order-supplier_acknowledgment_note",
-		"Material Request-set_cost_center",
+		"Material Request-set_cost_center", "Material Request-budget_preview_html",
 	]]]},
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval", "Terminated"]]]},
