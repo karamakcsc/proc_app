@@ -85,10 +85,12 @@ def get_budget_preview(company, items, cost_center=None):
 	validate_for_overbooking(), which would frappe.throw() on a breach.
 
 	get_ordered_amount()/get_requested_amount()/get_actual_expense() only ever
-	count already-submitted documents (docstatus=1) -- since this draft isn't
-	submitted, its own row amounts are added on top of the queried
-	requested_amount here, which is what makes this a genuine "if I submit this
-	now" preview rather than a stale "before this request existed" one.
+	count already-submitted documents (docstatus=1) -- this draft isn't one of
+	them, so its own row amounts are returned separately as
+	this_request_amount rather than folded into requested_amount, keeping
+	"requested" honest (committed spend that genuinely exists) while
+	remaining_after still reflects what would happen if this draft were
+	submitted now.
 	"""
 	if isinstance(items, str):
 		items = json.loads(items)
@@ -128,20 +130,33 @@ def get_budget_preview(company, items, cost_center=None):
 		validation.get_requested_amount(key)
 		validation.get_actual_expense(key)
 
-		draft_amount = sum(flt(row.amount) for row in v.items_to_process)
-		requested_amount = flt(v.requested_amount) + draft_amount
+		# this_request_amount kept separate from requested_amount -- requested_amount
+		# is committed spend that already exists (other submitted Material Requests),
+		# this_request_amount is only what THIS draft would add if submitted now.
+		# Folding them together (the earlier version of this function) makes
+		# "requested" dishonest -- it would silently include spend that doesn't
+		# exist yet. remaining_before never includes the draft; remaining_after
+		# does, and status is classified off remaining_after specifically, since
+		# that's the figure that actually determines whether a submit gets
+		# blocked -- classifying off remaining_before would show green right up
+		# until the moment the same submit gets Stopped or Warned.
+		this_request_amount = sum(flt(row.amount) for row in v.items_to_process)
+		requested_amount = flt(v.requested_amount)
 		ordered_amount = flt(v.ordered_amount)
 		actual_expense = flt(v.actual_expense)
 		budget_amount = flt(v.budget_amount)
 		accumulated_monthly_budget = flt(v.accumulated_monthly_budget)
 
-		used = requested_amount + ordered_amount + actual_expense
-		remaining_annual = budget_amount - used
-		remaining_monthly = accumulated_monthly_budget - used
+		used_before = requested_amount + ordered_amount + actual_expense
+		remaining_before = budget_amount - used_before
+		remaining_after = remaining_before - this_request_amount
+
+		monthly_remaining_before = accumulated_monthly_budget - used_before
+		monthly_remaining_after = monthly_remaining_before - this_request_amount
 
 		status = _classify(
-			remaining_annual,
-			remaining_monthly,
+			remaining_after,
+			monthly_remaining_after,
 			v.budget_doc.action_if_annual_budget_exceeded_on_mr,
 			v.budget_doc.action_if_accumulated_monthly_budget_exceeded_on_mr,
 		)
@@ -154,9 +169,9 @@ def get_budget_preview(company, items, cost_center=None):
 				"actual_expense": actual_expense,
 				"ordered_amount": ordered_amount,
 				"requested_amount": requested_amount,
-				"accumulated_monthly_budget": accumulated_monthly_budget,
-				"remaining": remaining_annual,
-				"remaining_monthly": remaining_monthly,
+				"this_request_amount": this_request_amount,
+				"remaining_before": remaining_before,
+				"remaining_after": remaining_after,
 				"status": status,
 			}
 		)
