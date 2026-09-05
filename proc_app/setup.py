@@ -216,6 +216,17 @@ def setup_report_permissions():
 		("Request for Quotation", "Procurement Officer"),
 	]
 
+	# Budget, for "Budget Utilisation": unlike the grants above, Procurement
+	# Officer has NO existing permission here at all (confirmed via a fresh
+	# Custom DocPerm/DocPerm query -- same gap class as Stock Reconciliation
+	# below), so both read and report must be granted together.
+	doctype, role = "Budget", "Procurement Officer"
+	if frappe.db.exists("DocType", doctype) and frappe.db.exists("Role", role):
+		if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role}):
+			add_permission(doctype, role, permlevel=0)
+		update_permission_property(doctype, role, 0, "read", 1)
+		update_permission_property(doctype, role, 0, "report", 1)
+
 	for doctype, role in grants:
 		if not frappe.db.exists("DocType", doctype):
 			frappe.logger().warning(

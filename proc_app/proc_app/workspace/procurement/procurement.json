@@ -2,7 +2,7 @@
  "app": "proc_app",
  "charts": [],
  "content": "[{\"id\": \"pcCardBreak1\", \"type\": \"card\", \"data\": {\"card_name\": \"Procurement\", \"col\": 6}}, {\"id\": \"pcCardBreak2\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}]",
- "creation": "2026-09-03 16:42:32.299002",
+ "creation": "2026-09-05 22:18:57.775790",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -182,9 +182,20 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Budget Utilisation",
+   "link_count": 0,
+   "link_to": "Budget Utilisation",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Budget",
+   "type": "Link"
   }
  ],
- "modified": "2026-09-03 17:15:01.324649",
+ "modified": "2026-09-05 22:46:09.701570",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",

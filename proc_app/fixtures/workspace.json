@@ -270,9 +270,24 @@
     "only_for": null,
     "report_ref_doctype": null,
     "type": "Link"
+   },
+   {
+    "dependencies": null,
+    "description": null,
+    "hidden": 0,
+    "icon": null,
+    "is_query_report": 0,
+    "label": "Budget Utilisation",
+    "link_count": 0,
+    "link_to": "Budget Utilisation",
+    "link_type": "Report",
+    "onboard": 0,
+    "only_for": null,
+    "report_ref_doctype": "Budget",
+    "type": "Link"
    }
   ],
-  "modified": "2026-09-03 17:15:01.324649",
+  "modified": "2026-09-05 22:46:09.701570",
   "module": "Proc App",
   "name": "Procurement",
   "number_cards": [],

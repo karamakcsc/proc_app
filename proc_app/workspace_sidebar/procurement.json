@@ -1,6 +1,6 @@
 {
  "app": "proc_app",
- "creation": "2026-09-03 16:42:32.608119",
+ "creation": "2026-09-05 22:18:57.901212",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "buying",
@@ -203,9 +203,20 @@
    "link_type": "Report",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Budget Utilisation",
+   "link_to": "Budget Utilisation",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-03 17:15:02.318949",
+ "modified": "2026-09-05 22:46:18.877862",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",
