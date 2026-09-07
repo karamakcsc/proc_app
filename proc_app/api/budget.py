@@ -70,7 +70,10 @@ def _resolve_item_row(item, company, default_cost_center, doctype):
 	cost_center is whatever the row/document already picked; get_item_details()
 	also returns one, but a real item row's cost_center is the user's own
 	explicit choice (or the document's own cost center default), not something
-	this preview should override.
+	this preview should override. expense_account follows the same rule --
+	an explicitly-supplied value (e.g. the desk form's own row, which the user
+	may have corrected by hand) always wins over re-derivation; only falls
+	back to get_item_details() when the caller genuinely didn't supply one.
 
 	Known, accepted limitation for Purchase Invoice specifically (found via a
 	live reconciliation test, not guessed): the stock-item override just below
@@ -94,6 +97,13 @@ def _resolve_item_row(item, company, default_cost_center, doctype):
 			"conversion_rate": 1,
 			"currency": frappe.get_cached_value("Company", company, "default_currency"),
 			"qty": qty,
+			# Without this, get_item_details() has no price list to query at all --
+			# it then silently returns rate=0, even when a real Item Price exists
+			# for this item (found live: Buying Settings' own default buying_price_list,
+			# "Standard Buying", was never being passed here at all -- confirmed via
+			# a genuine before/after test that the identical get_item_details() call
+			# resolves 60,000.0, not 0.0, purely by adding this one field).
+			"buying_price_list": frappe.db.get_single_value("Buying Settings", "buying_price_list"),
 		}
 	)
 	args.update(_DOCTYPE_CONFIG[doctype]["doc_defaults"])
@@ -102,7 +112,7 @@ def _resolve_item_row(item, company, default_cost_center, doctype):
 	if not rate:
 		rate = flt(details.get("rate")) or flt(details.get("price_list_rate"))
 	cost_center = item.get("cost_center") or default_cost_center or details.get("cost_center")
-	expense_account = details.get("expense_account")
+	expense_account = item.get("expense_account") or details.get("expense_account")
 
 	if doctype == "Purchase Invoice":
 		# get_item_details() is NOT what actually resolves expense_account for
