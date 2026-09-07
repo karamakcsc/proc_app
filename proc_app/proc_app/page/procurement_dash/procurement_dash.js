@@ -164,6 +164,13 @@ function build_page_html() {
 	html += chart_card(__('Portfolio Value: Consumed vs. Remaining'), 'consumptionLegend', 'consumptionChart');
 	html += '</div>';
 
+	html += '<h2 style="font-size:16px; margin:28px 0 12px;">' + __('Budget') + '</h2>';
+
+	html += '<div x-show="!loading" class="dashboard-chart-grid">';
+	html += chart_card(__('Budget Utilisation by Cost Centre'), 'budgetUtilLegend', 'budgetUtilChart');
+	html += chart_card(__('Budget Status Breakdown'), 'budgetStatusLegend', 'budgetStatusChart');
+	html += '</div>';
+
 	html += '</div>'; // /x-data
 	html += '</div>'; // /.procurement-dashboard-page
 	return html;
@@ -265,7 +272,9 @@ window.proc_app_dashboardPage = function () {
 				frappe.call({ method: 'proc_portal.api.dashboard.get_contract_expiry_timeline' }),
 				frappe.call({ method: 'proc_portal.api.dashboard.get_invoice_aging' }),
 				frappe.call({ method: 'proc_portal.api.dashboard.get_contract_portfolio' }),
-			]).then(([summary, byStatus, byMonth, bySupplier, rfqStatus, funnel, fulfillment, contractExpiry, invoiceAging, portfolio]) => {
+				frappe.call({ method: 'proc_portal.api.dashboard.get_budget_utilisation_by_cost_center' }),
+				frappe.call({ method: 'proc_portal.api.dashboard.get_budget_status_breakdown' }),
+			]).then(([summary, byStatus, byMonth, bySupplier, rfqStatus, funnel, fulfillment, contractExpiry, invoiceAging, portfolio, budgetByCostCenter, budgetStatus]) => {
 				this.summary = summary.message || {};
 				this.portfolio = portfolio.message || {};
 				this.loading = false;
@@ -275,6 +284,7 @@ window.proc_app_dashboardPage = function () {
 						funnel.message || [], fulfillment.message || {}, contractExpiry.message || [], invoiceAging.message || []
 					);
 					this.renderPortfolioCharts(this.portfolio);
+					this.renderBudgetCharts(budgetByCostCenter.message || [], budgetStatus.message || {});
 				});
 			});
 		},
@@ -322,6 +332,61 @@ window.proc_app_dashboardPage = function () {
 						x: { ...mutedScale, stacked: true },
 						y: { ...mutedScale, stacked: true },
 					},
+				},
+			}));
+		},
+		renderBudgetCharts(byCostCenter, statusBreakdown) {
+			const mutedScale = {
+				grid: { display: false },
+				ticks: { color: MUTED_TICK },
+			};
+
+			// Allocated/Consumed use two fixed CHART_PALETTE colours (indigo/sky),
+			// matching the two-dataset-grouped-bar convention already established
+			// by rfqChart -- NOT the ok/warning/exceeded traffic-light colours,
+			// since a single bar here can straddle both "under" and "over" budget
+			// across different cost centres, unlike the doughnut below where every
+			// segment IS one specific status.
+			buildLegend('budgetUtilLegend', [
+				{ color: '#5271FF', label: 'Allocated' },
+				{ color: '#2EB2FF', label: 'Consumed (worst bucket)' },
+			]);
+			register_chart(new Chart(document.getElementById('budgetUtilChart'), {
+				type: 'bar',
+				data: {
+					labels: byCostCenter.map(r => r.cost_center),
+					datasets: [
+						{ label: 'Allocated', data: byCostCenter.map(r => r.allocated), backgroundColor: '#5271FF', borderRadius: 3, barThickness: 16 },
+						{ label: 'Consumed', data: byCostCenter.map(r => r.consumed), backgroundColor: '#2EB2FF', borderRadius: 3, barThickness: 16 },
+					],
+				},
+				options: {
+					maintainAspectRatio: false,
+					plugins: { legend: { display: false } },
+					scales: { x: mutedScale, y: mutedScale },
+				},
+			}));
+
+			// Same ok/warning/exceeded colours as the live Budget Impact panels
+			// (proc_app.api.budget's own build_budget_preview_html()) -- these
+			// three segments ARE those same three statuses, one Budget at a time,
+			// so reusing the exact colour meaning keeps it consistent across the
+			// whole app rather than picking arbitrary chart colours.
+			const statusMeta = [
+				{ key: 'ok', label: 'OK', color: '#2e7d32' },
+				{ key: 'near_limit', label: 'Near limit', color: '#e0942e' },
+				{ key: 'over_budget', label: 'Over budget', color: '#c62828' },
+			];
+			buildLegend('budgetStatusLegend', statusMeta.map(s => ({ color: s.color, label: s.label, value: statusBreakdown[s.key] || 0 })));
+			register_chart(new Chart(document.getElementById('budgetStatusChart'), {
+				type: 'doughnut',
+				data: {
+					labels: statusMeta.map(s => s.label),
+					datasets: [{ data: statusMeta.map(s => statusBreakdown[s.key] || 0), backgroundColor: statusMeta.map(s => s.color) }],
+				},
+				options: {
+					maintainAspectRatio: false,
+					plugins: { legend: { display: false } },
 				},
 			}));
 		},
