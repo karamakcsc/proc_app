@@ -107,6 +107,29 @@ def on_material_request_update(doc, method):
 	if not company:
 		frappe.throw(f"Material Request {doc.name} has no company set — cannot spawn a linked Purchase request.")
 
+	# Built as an explicit loop, not a list comprehension, so item_rows and
+	# source_rates are provably in the same order by construction -- if a
+	# filter is ever added here (only forwarding some rows), both lists would
+	# stay in sync automatically, unlike a separate zip(doc.items, item_rows)
+	# done after the fact, which could silently mispair the moment one list
+	# gets filtered and the other doesn't. Not needed for correctness today
+	# (this loop is currently unconditional, forwarding every row), but this
+	# structure is what makes that a checkable fact rather than an assumption.
+	item_rows = []
+	source_rates = []
+	for item in doc.items:
+		item_rows.append(
+			{
+				"item_code": item.item_code,
+				"qty": item.qty,
+				"rate": item.rate,
+				"schedule_date": item.schedule_date,
+				"warehouse": item.warehouse,
+				"cost_center": item.cost_center,
+			}
+		)
+		source_rates.append({"item_code": item.item_code, "qty": item.qty, "rate": item.rate})
+
 	new_doc = frappe.get_doc({
 		"doctype": "Material Request",
 		"material_request_type": "Purchase",
@@ -116,18 +139,25 @@ def on_material_request_update(doc, method):
 		"requesting_department": doc.requesting_department,
 		"concerned_department": doc.concerned_department,
 		"source_material_request": doc.name,
-		"items": [
-			{
-				"item_code": item.item_code,
-				"qty": item.qty,
-				"schedule_date": item.schedule_date,
-				"warehouse": item.warehouse,
-				"cost_center": item.cost_center,
-			}
-			for item in doc.items
-		],
+		"items": item_rows,
 	})
 	new_doc.insert(ignore_permissions=True)
+
+	# Same root cause and same fix as proc_portal.api.requests.create_request()
+	# (PROC_PORTAL_SPEC.md v2.17): MaterialRequest.on_update() unconditionally
+	# re-derives every row's rate from the default Buying Price List on a
+	# brand-new insert (has_value_changed("buying_price_list") always returns
+	# True pre-insert), silently discarding the rate just copied above.
+	# Reapplied here via db_set(), the same mechanism update_item_rates()
+	# itself uses, not a second validate()/save() cycle.
+	for db_item, source in zip(new_doc.items, source_rates):
+		db_item.db_set(
+			{
+				"rate": source["rate"],
+				"amount": frappe.utils.flt(source["rate"] * source["qty"], db_item.precision("amount")),
+			},
+			update_modified=False,
+		)
 
 	# Carry over any supporting documents attached to the original request — without
 	# this, Forward-to-Purchase would silently drop them, since the spawned document
