@@ -3,8 +3,8 @@
 
 ---
 
-> **Document Status:** `DRAFT v0.1`
-> **Last Updated:** 2026-08-03
+> **Document Status:** `v1.95`
+> **Last Updated:** 2026-09-09
 > **Maintained by:** KCSC — Karama Computer Services Company
 > **App Name:** `proc_app`
 > **Target Version:** ERPNext v16.30 / Frappe v16.29
@@ -27,24 +27,104 @@ KCSC Proc is designed to function as a complete, standalone procurement system v
 
 ### 1.3 Status
 
-This app was scaffolded on 2026-08-03 (re-scaffolded from the earlier `karama_proc` under a new name, before any real content existed — see Section 4 below). It currently contains no custom doctypes, fields, or business logic — installation shell only.
+This app was scaffolded on 2026-08-03 (re-scaffolded from the earlier `karama_proc` under a new name). It is now a substantially built, live system on `site1.local` — 6 custom doctypes (2 submittable, 2 child tables), 5 active Workflows covering Material Request/Purchase Order Amendment/Request for Quotation/RFQ Comparison Sheet/Contract approval chains, 36 custom fields across 7 core doctypes, a full Procurement Officer/Department Manager/Officer/User permission model (51 Custom DocPerm grants), 5 desk reports, 9 Client Scripts, and 2 desk pages (Procurement Dashboard, RFQ Comparison). See **Section 2 (Current State)** for the complete, live-verified inventory (generated 2026-09-09, not from memory), and Section 6 (Changelog) for the full build history — 95 versioned entries from scaffolding through the deployment audit that confirmed this app installs correctly on a genuinely fresh site.
 
-### 1.4 Scope (Planned — Not Yet Built)
+### 1.4 Scope — Original Plan vs. What Was Actually Built
 
-Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, Notifications Master List — this app's repo, relocated from `SUPPLIER_PORTAL_SPEC.md` on 2026-08-06, see Section 4 below), pending items include:
-- Purchase Order Amendment (the one confirmed genuine custom-build gap)
-- Migration of `Supplier ASN`, `Supplier ASN Item`, `Supplier Invoice Dispute` doctypes from `supplier_portal`
-- Migration of PO acknowledgment fields and Supplier onboarding fields from `supplier_portal`
-- Purchase Requisition + approval workflow (OOB via Material Request + Frappe Workflow)
-- Stock Management (OOB — Item, Warehouse, Stock Entry, Reorder Tool, Stock Reconciliation)
-- Procurement and Stock reports (mix of OOB standard reports + custom Query Reports)
-- Roles & Permissions (draft baseline adopted — see `PROC_SUITE_ARCHITECTURE.md` Section 1.6)
+The original plan (below, written 2026-08-03) is preserved for historical record; every item on it has since been built, confirmed via Section 2's live inventory:
+- Purchase Order Amendment — built (submittable custom doctype, own Workflow, own naming series)
+- `Supplier ASN`, `Supplier ASN Item`, `Supplier Invoice Dispute` doctypes migrated from `supplier_portal` — built (all 3 present, module `Proc App`)
+- PO acknowledgment fields and Supplier onboarding fields migrated from `supplier_portal` — built (`Purchase Order.supplier_acknowledged*`, `Supplier.portal_onboarding_status`/`commercial_registration_no`/`onboarding_*` — see Section 2.2)
+- Purchase Requisition + approval workflow (OOB via Material Request + Frappe Workflow) — built (Section 4, "Material Request Approval Workflow")
+- Stock Management (OOB) — confirmed working via ERPNext's own out-of-the-box functionality, no custom code needed (Section 3, Phase 3)
+- Procurement and Stock reports — built (5 reports, Section 2.6)
+- Roles & Permissions — built (4 project roles, full permission model, Section 2.3)
 
-The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom log, Notifications Master List, Roles & Permissions) from `SUPPLIER_PORTAL_SPEC.md` into `PROC_SUITE_ARCHITECTURE.md` in this app's repo is complete as of 2026-08-06 — see Section 4 below for the record of that move. All items listed above remain genuinely not started; only the relocation of the planning content itself is done.
+Per `PROC_SUITE_ARCHITECTURE.md` Sections 2 and 3 (OOB-vs-Custom Decision Log, Notifications Master List — relocated from `SUPPLIER_PORTAL_SPEC.md` on 2026-08-06, see Section 5 below for that record), this was the full original scope. Nothing on it remains outstanding.
 
 ---
 
-## 2. Development Phases
+## 2. Current State
+
+*Generated 2026-09-09 from live queries against `site1.local` (`bench --site site1.local console`) plus a direct read of this app's own `hooks.py` — not from memory or the Changelog below. Where the Changelog documents *why* and *how* something was built, this section documents *what genuinely exists right now*. Anything that couldn't be verified this way is explicitly flagged rather than assumed.*
+
+### 2.1 Custom Doctypes (module `Proc App`)
+
+| Doctype | Submittable | Child table | Naming |
+|---|---|---|---|
+| RFQ Comparison Sheet | Yes | No | `naming_series:` |
+| RFQ Comparison Sheet Item | No | Yes (child of RFQ Comparison Sheet) | — |
+| Purchase Order Amendment | Yes | No | `naming_series:` |
+| Supplier ASN | No | No | `naming_series:` |
+| Supplier ASN Item | No | Yes (child of Supplier ASN) | — |
+| Supplier Invoice Dispute | No | No | `naming_series:` |
+
+None of these 6 have a file-based doctype folder except the last 3 (`Supplier ASN`/`Supplier ASN Item`/`Supplier Invoice Dispute`, migrated from `supplier_portal`) — `RFQ Comparison Sheet`/`RFQ Comparison Sheet Item`/`Purchase Order Amendment` exist purely as database records, tracked only via the `DocType` fixture (see Section 7, Deployment Procedure, and the 2026-09-08 Known Issues entries for why this distinction matters).
+
+### 2.2 Custom Fields (36 total, on 7 core doctypes — verified against `hooks.py`'s own current fixture filter, cross-checked live)
+
+| Target Doctype | Fields |
+|---|---|
+| Material Request | `budget_preview_html` (HTML), `budget_tab` (Tab Break), `set_cost_center` (Link), `source_material_request` (Link), `concerned_department` (Link), `requesting_department` (Link), `workflow_state` (Link) |
+| Contract | `terminated_by` (Link), `termination_reason` (Small Text), `termination_date` (Date), `workflow_state` (Link), `auto_renew` (Check), `renewed_from` (Link), `contract_category` (Select), `contract_value` (Currency), `custom_remarks` (Data), `custom_cost_center` (Link) |
+| Purchase Order | `supplier_acknowledgment_note` (Small Text), `supplier_acknowledged_on` (Datetime), `supplier_acknowledged` (Check), `budget_preview_html` (HTML), `budget_tab` (Tab Break), `contract` (Link) |
+| Supplier | `onboarding_reviewed_by` (Link), `onboarding_submitted_on` (Datetime), `commercial_registration_no` (Data), `portal_onboarding_status` (Select) |
+| Purchase Invoice | `budget_preview_html` (HTML), `budget_tab` (Tab Break), `contract` (Link) |
+| Request for Quotation | `lead_time_weight` (Percent), `price_weight` (Percent), `workflow_state` (Link) |
+| Department | `default_warehouse` (Link), `department_officer` (Link), `department_manager` (Link) |
+
+**One live custom field on Purchase Order, `workflow_state`, was found but is deliberately excluded from the above and from this app's own fixture** — confirmed (Section 5, 2026-09-08 entry) to be debris auto-created by an unrelated demo Workflow ("PO WF"), not part of this project.
+
+### 2.3 Roles & Permission Model
+
+4 project roles exist (`Procurement Officer`, `Department User`, `Department Manager`, `Department Officer`), each with Custom DocPerm grants applied programmatically by `setup.py`'s `after_migrate` hook (not fixtures — see Section 7):
+
+| Role | Grants | Notable write/create/submit access |
+|---|---|---|
+| Procurement Officer | 22 | Full read/write/create/submit on Material Request, Purchase Order Amendment, Request for Quotation, RFQ Comparison Sheet, Purchase Order, Supplier Quotation, Contract, Purchase Invoice; create-only on Purchase Receipt; read-only on Supplier, Account, Contract Template, Budget, Item/Item Group/UOM/Warehouse/Brand/Company/Department/Price List, Supplier ASN |
+| Department User | 9 | Read/write/create (no submit) on Material Request; read-only on Item, Item Group, UOM, Warehouse, Brand, Company, Department, Price List |
+| Department Manager | 9 | Read/write (no create/submit) on Material Request; same read-only supporting-doctype set as Department User |
+| Department Officer | 11 | Read/write/submit on Material Request; same supporting-doctype read-only set plus Stock Reconciliation and Stock Settings |
+
+(`Supplier Portal User`, also checked live, belongs to `supplier_portal` — see that app's own spec.)
+
+### 2.4 Workflows (5 active, all currently `is_active: 1`)
+
+| Workflow | Document Type | States | Key transitions |
+|---|---|---|---|
+| Material Request Approval | Material Request | Draft → Pending Requesting-Dept Approval → Pending Concerned-Dept Review → (Approved - Issue \| Forwarded to Purchase \| Pending Concerned-Dept Manager Approval → Pending Procurement Approval → Approved - Purchase) \| Rejected | Submit (Department User) → Approve/Reject (Department Manager) → Approve - Issue from Stock / Approve - Forward to Purchase / Reject (Department Officer) → Approve/Reject (Department Manager) → Approve/Reject (Procurement Officer) |
+| Contract Approval | Contract | Draft → Pending Approval → Approved → Terminated \| Rejected | Submit/Approve/Reject/Terminate, all Procurement Officer |
+| Comparison Sheet Approval | RFQ Comparison Sheet | Draft → Pending Approval → Approved \| Rejected | Submit/Approve/Reject, all Procurement Officer |
+| RFQ Approval | Request for Quotation | Draft → Pending Approval → Approved \| Rejected | Submit/Approve/Reject, all Procurement Officer |
+| Purchase Order Amendment Approval | Purchase Order Amendment | Draft → Pending Approval → Approved \| Rejected | Submit/Approve/Reject, all Procurement Officer |
+
+**A 6th Workflow exists live but is not part of this project**: `PO WF` on Purchase Order (`is_active: 1`, generic Draft/Pending/Approved states, every transition allowed by role `"All"`) — a demo artifact found during the 2026-09-08 deployment audit (Section 5), deliberately left in place pending a human decision on one real, in-progress Purchase Order.
+
+### 2.5 Client Scripts (9, all `enabled: 1`)
+
+`Purchase Invoice Budget Impact` (Purchase Invoice), `Purchase Order Budget Impact` (Purchase Order), `Material Request Department Company Filter` (Material Request), `Material Request Set Cost Center` (Material Request), `Contract Desk Buttons` (Contract), `Supplier ASN Create Purchase Receipt Button` (Supplier ASN), `Supplier Quotation Lead Time Auto-Calc` (Supplier Quotation), `Request for Quotation Desk Buttons` (Request for Quotation), `RFQ Comparison Sheet Item Supplier Ellipsis` (RFQ Comparison Sheet).
+
+### 2.6 Reports (module `Proc App`, `Buying`, or `Stock`)
+
+| Report | Ref Doctype | Type |
+|---|---|---|
+| Budget Utilisation | Budget | Script Report |
+| RFQ Comparison - By Proposal | Request for Quotation | Script Report |
+| Physical Count Variance | Stock Reconciliation | Query Report |
+| Items Below Reorder Level | Item | Query Report |
+| Purchase Requisition Status | Material Request | Query Report |
+
+### 2.7 Desk Pages (module `Proc App`)
+
+`procurement-dash` ("Procurement Dashboard") and `rfq-comparison` ("RFQ Comparison") — both file-based (own `.js`/`.json` under `proc_app/proc_app/page/`), independent of fixtures.
+
+### 2.8 What Transfers on a Fresh Install
+
+See Section 7 (Deployment Procedure) for the full, live-verified command sequence and the deployment-blocker history behind it. In short: everything in this section is confirmed to transfer correctly, given the current fixture configuration and provided the mandatory final `bench migrate` step is not skipped.
+
+---
+
+## 3. Development Phases
 
 | Phase | Status | Description |
 |---|---|---|
@@ -58,17 +138,17 @@ The relocation of cross-app architecture content (App Boundary, OOB-vs-Custom lo
 
 ---
 
-## 3. Material Request Approval Workflow — Design (Not Yet Built)
+## 4. Material Request Approval Workflow (Built and Live)
 
-### 3.1 Purpose
+### 4.1 Purpose
 
 This documents the design for proc_app's first real feature: a Material Request approval workflow, built entirely on ERPNext v16 OOB capabilities (Material Request doctype + Frappe Workflow engine) plus 4 custom fields. Designed 2026-08-07, based on a real example workflow provided by KCSC, before the client workshop — treated as a standard baseline per the same "adopt now, refine later" principle as Section 1.6 of PROC_SUITE_ARCHITECTURE.md.
 
-### 3.2 Reference Example (source of this design)
+### 4.2 Reference Example (source of this design)
 
 A Finance Department employee needs printer ink. They create a Material Request addressed to IT (the department that manages that item type). The Finance Department Manager approves first. Then IT's "person in charge" (Officer) checks stock: if available, it's issued directly from IT's warehouse to Finance; if not, it goes to IT's Manager for approval, then to Procurement's Officer for final approval, before becoming a Purchase Order.
 
-### 3.3 Custom Fields Required
+### 4.3 Custom Fields Required
 
 On Material Request:
 - requesting_department (Link to Department) — the department that needs the item, e.g. Finance
@@ -78,13 +158,13 @@ On Department:
 - department_manager (Link to User) — this department's manager, approves requests where this department is either the requesting or concerned department
 - department_officer (Link to User) — this department's person in charge, reviews stock availability and decides the issue-vs-purchase branch when this department is the concerned department
 
-### 3.4 New Roles Required
+### 4.4 New Roles Required
 
 - Department Manager — generic role, held by whoever manages any department. Actual approval authority for a specific request is enforced via a Workflow transition condition checking that the acting user matches the relevant department's department_manager field, not by the role alone.
 - Department Officer — same pattern, checked against department_officer.
 - Procurement's final approval reuses the existing draft Procurement Officer role (see PROC_SUITE_ARCHITECTURE.md, Section 1.6) — no new role needed there.
 
-### 3.5 Workflow States & Transitions
+### 4.5 Workflow States & Transitions
 
 Draft, then Submit moves it to Pending Requesting-Department Approval, where the approver is the requesting department's department_manager. Approve moves it to Pending Concerned-Department Review, where the approver is the concerned department's department_officer. From there, two branches: Approve as Issue from Stock moves it directly to Approved – Issue (docstatus: Submitted). Approve as Forward to Purchase moves it to Pending Concerned-Department Manager Approval, where the approver is the concerned department's department_manager; Approve there moves it to Pending Procurement Approval, where the approver holds the Procurement Officer role; Approve there moves it to Approved – Purchase (docstatus: Submitted). A Reject action is available at every approval step and moves the request to Rejected.
 
@@ -92,7 +172,7 @@ Each department-scoped approval uses a Workflow Transition condition (confirmed 
 
 Approved – Issue and Approved – Purchase are both docstatus: Submitted states — at that point, ERPNext's existing native Create actions (confirmed present, no custom code needed) become available: make_stock_entry() for the issue path, make_purchase_order() / make_request_for_quotation() for the purchase path.
 
-### 3.6 Deliberately Deferred (Not Built in This Phase)
+### 4.6 Deliberately Deferred (Not Built in This Phase)
 
 - Free-text / not-yet-in-system items: ERPNext's Material Request Item.item_code is mandatory at the Frappe framework level (confirmed via code audit, not just a UI restriction) — allowing a supplier or requester to describe an item that doesn't exist yet in the Item master would require genuine custom code (a flag + description field, plus a script to auto-create the Item record at PO time). This is a real, scoped piece of custom work, deliberately deferred until the core approval workflow is built and proven. Not forgotten — tracked here.
 - Approval value thresholds: still pending the client workshop (see PROC_SUITE_ARCHITECTURE.md, Section 1.6) — this workflow's approvals are role/department-based, not value-based, for now.
@@ -103,7 +183,7 @@ Approved – Issue and Approved – Purchase are both docstatus: Submitted state
 - **Supporting doctype read permissions found incomplete via manual browser testing:** console-based testing (`doc.insert()` under a test user) only exercises document-level and field-level permission checks — it does not exercise the desk UI's Link field dropdowns, which independently check read permission on the linked doctype when a user opens a Link field to search/select a value. Yasser's manual browser test surfaced two more doctypes needing read access that console testing had missed: `Company` and `Department`. Added to `SUPPORTING_DOCTYPES` in `setup.py` (2026-08-09), bringing the read-only supporting-doctype list to `Item`, `Item Group`, `UOM`, `Warehouse`, `Brand`, `Company`, `Department` — all 4 workflow roles, read-only. Applied directly via `setup_supporting_doctype_permissions()` (not a full `migrate`, to avoid re-triggering the Workflow `is_active` revert documented above). Worth remembering for future permission gaps: UI-driven testing and console-driven testing surface different failure classes — neither alone is sufficient.
 - **Department Officer requires ERPNext's native "Stock User" role for the Issue-from-Stock branch:** Discovered via manual browser testing (2026-08-09) — creating a Stock Entry from a Material Request in "Approved - Issue" state requires permissions on the Stock Entry doctype itself, which our custom permission matrix (Section 3, setup.py) never granted (we only gave read-only access to Warehouse as a supporting doctype, not write/create/submit on Stock Entry). Rather than expand Department Officer's own Custom DocPerm to cover this, the correct fix is assigning ERPNext's existing native "Stock User" role (a standard OOB role, not something proc_app manages) to whichever user account is acting as Department Officer for a given department — keeping Department Officer itself narrowly scoped to department-approval concerns only, and stock-transaction rights separate. **Operational consequence:** any real person assigned as a department's `department_officer` must also hold ERPNext's standard "Stock User" role (or equivalent) to actually execute the Issue-from-Stock action — this is a per-deployment user-assignment step, not something proc_app's fixtures configure automatically, consistent with the standing "roles in code, user assignment in the desk" principle.
 
-### 3.7 Live Test Results (2026-08-08) — PASSED
+### 4.7 Live Test Results (2026-08-08) — PASSED
 
 The full purchase-branch path was tested end-to-end against real Frappe permission/workflow enforcement (using `apply_workflow()`, not manual field manipulation), with 5 test users and 2 real seeded departments (Accounts - K as requesting, Operations - K as concerned).
 
@@ -118,7 +198,7 @@ The full purchase-branch path was tested end-to-end against real Frappe permissi
 
 **Environment state after testing:** test document deleted (cancelled then force-deleted) to leave a clean slate. Workflow left `is_active: 1` at the database level per request — note this is NOT reflected in the committed fixture (still `0`, correctly, per Section 3.6) and will silently revert to inactive on the next `bench migrate`, consistent with the documented activation procedure.
 
-### 3.8 Redesign — Forward to Purchase Now Spawns a Linked Document (2026-08-09)
+### 4.8 Redesign — Forward to Purchase Now Spawns a Linked Document (2026-08-09)
 
 **Problem found via manual browser testing:** ERPNext's native "Create" button on Material Request is gated entirely by `material_request_type`, not `workflow_state`. The original design (one document, type "Purchase" throughout, branching internally between issue/purchase) meant the Issue-from-Stock branch never had a working native path to create a Stock Entry — ERPNext only wires `make_stock_entry()` to the Material Transfer, Material Issue, and Customer Provided types, never Purchase.
 
@@ -134,7 +214,7 @@ The full purchase-branch path was tested end-to-end against real Frappe permissi
 
 ---
 
-## 4. Known Issues & Decisions Log
+## 5. Known Issues & Decisions Log
 
 | Date | Type | Description | Decision / Resolution |
 |---|---|---|---|
@@ -178,10 +258,11 @@ The full purchase-branch path was tested end-to-end against real Frappe permissi
 
 ---
 
-## 5. Changelog
+## 6. Changelog
 
 | Version | Date | Author | Summary |
 |---|---|---|---|
+| 1.96 | 2026-09-09 | KCSC | **Restructured this document — it had become an excellent journal but a weak specification.** Front matter was stale since 2026-08-03 (`Document Status: DRAFT v0.1`, `Last Updated: 2026-08-03`) despite 95 versioned Changelog entries since; updated to reflect the real latest version and today's date. §1.3 ("installation shell only") and §1.4 ("Scope (Planned — Not Yet Built)") described an empty app that hasn't existed since early August — rewritten to state what's actually built, with the original plan preserved underneath as a historical record of what was promised vs. delivered (everything was delivered). The Material Request Workflow section's own heading, "— Design (Not Yet Built)", was equally stale (this workflow has been live and tested since 2026-08-08) — renamed to "(Built and Live)". **Added a new Section 2, "Current State"** — populated entirely from a fresh `bench console` inventory against `site1.local` and a direct read of this app's own current `hooks.py` (not from memory or from re-reading old Changelog entries): all 6 custom doctypes, all 36 custom fields grouped by target doctype (cross-checked against `hooks.py`'s own live filter, correctly excluding the one field confirmed to be unrelated demo-workflow debris), the full 4-role/51-grant permission model, all 5 real Workflows with their states/transitions (plus the 6th, non-project one flagged, not omitted), all 9 Client Scripts, all 5 Reports, both desk Pages. Subsequent sections renumbered accordingly (Development Phases → 3, Material Request Workflow → 4, Known Issues → 5, Changelog → 6, Deployment Procedure → 7). **Changelog and Known Issues entries themselves were left completely untouched, per instruction** — their prose is historical record, not something to rewrite after the fact. One accepted, unavoidable consequence: a small number of older entries reference section numbers by their OLD position (e.g. v1.95 above cites "Section 4"/"Section 6" for what are now Section 5/Section 7) — fixing those inline would mean editing protected Changelog content, so they're left as a known, minor staleness rather than silently patched. |
 | 1.95 | 2026-09-08 | KCSC | **Fixed the deployment blocker found by a real fresh-site install test** (full root cause and evidence in Section 4's new 2026-09-08 entry; deployment procedure now documented in the new Section 6). `proc_app`'s own install failed outright on a genuinely fresh site with `Not in Developer Mode` — traced to the `Page` fixture entry (`Page.validate()` throws unconditionally for a new Page outside developer mode, with no `in_import` exemption unlike every other fixture-tracked doctype here), which in turn silently aborted every fixture file sorting after `page.json` (`property_setter`, `report`, `role`, `workflow`, `workflow_action_master`, `workflow_state`, `workspace`, `workspace_sidebar`) on both `install-app` and `migrate`. **Audited every other fixture-tracked doctype's own core source for the same `developer_mode` guard shape** (Report/Workspace/Workspace Sidebar/Desktop Icon/DocType all confirmed safe — either explicitly exempt `in_import`, only gate an optional side-effect, or are bypassed by `custom=1`) — Page is uniquely dangerous, confirmed by direct source inspection, not inference. **Fixed** by removing the `Page` entry from `hooks.py`'s `fixtures` list AND deleting the now-orphaned `fixtures/page.json` file itself (confirmed live that removing only the `hooks.py` entry was insufficient — `import_fixtures()` blindly imports every `.json` physically present in the folder regardless of current `hooks.py` config, so the stale file kept breaking every subsequent install attempt until deleted). Both Pages this covered are already file-based and sync automatically, independent of fixtures — no functional loss. **Re-verified against a genuine reinstall on `deploytest.local`**: uninstalled and reinstalled `proc_app` cleanly (exit 0, only the pre-existing benign `Error creating icons 'logo'` warning also seen on `proc_portal`/`supplier_portal`), then ran `bench migrate` (exit 0, `after_migrate` hooks now genuinely execute). Full post-fix inventory matches `site1.local`'s baseline exactly: `Workflow: 5`, `Workflow State: 12`, `Workflow Action Master: 7`, `Property Setter: 193` (`Contract`-specific: 11, `Contract-main-field_order` present), `Custom Field: 50`, `Custom DocPerm` for the 4 project roles: `51/51`, `Procurement Officer` permissions on Material Request correct (`read=1, write=1, submit=1`), all 5 Workflows present (`is_active: 0`, matching the established by-policy fixture state). Nothing remains missing. **Also confirmed there is no supported way to make `frappe.utils.fixtures.import_fixtures()` itself more resilient** (its own source only catches `ImportError`/`DoesNotExistError` per file, with no app-level override point) — the only real mitigation is auditing a doctype's own `developer_mode` handling before ever adding it as a fixture, now written down as a standing lesson in Section 4. New Section 6 (Deployment Procedure) documents the exact required command sequence, most importantly that the final `bench migrate` is mandatory, not optional — confirmed live that `after_migrate` (all of this project's Custom DocPerm setup) never fires during `install-app` at all. |
 | 1.94 | 2026-09-08 | KCSC | **Deployment fix, following a full fixture-vs-live audit** (see Section 4's three new entries, 2026-09-08, for the complete investigation and reasoning) — the concrete result of that audit. `hooks.py`'s `fixtures` list: added a new `Property Setter` entry (16 records, `Contract-main-field_order` and both custom doctypes' naming-series options among them — previously untracked entirely); switched `DocType`/`Client Script`/`Page`/`Workspace`/`Workspace Sidebar` from explicit name lists to `module`/`dt`-based filters (self-maintaining for future additions, each verified live to capture the exact same record set as the old list plus nothing foreign); switched `Custom Field` to `dt IN [our 7 doctypes]` excluding one explicitly-named exception (`Purchase Order-workflow_state`, demo-workflow debris, not ours). `Role`/`Workflow State`/`Workflow Action Master`/`Report`/`Workflow` deliberately kept as explicit name lists — each individually confirmed not viable to broaden (no `module`/`document_type` field exists on the first three; `Report` because a module filter would drop 3 of 5 real reports; `Workflow` because a `document_type` filter would auto-ship any future demo workflow, the exact risk this same audit's own Section 4 entry documents happening twice already). **Investigated whether the currently-active "PO WF" demo Workflow (found during this audit) breaks anything before deciding what to do with it**: confirmed it does not block `submit_po()` (bypassed outright via direct `doc.submit()`), but one real PO (`PUR-ORD-2026-00034`) sits in a state — `Pending` — that only this workflow defines; per the task's own explicit stop condition, **left in place, not deleted**, pending a human decision on that one document. **Verified complete**: re-exported all fixtures, confirmed via record counts that every fixture file now holds exactly what live investigation established it should (`doctype.json`: 3, `custom_field.json`: 36 — the 34 originally tracked plus 2 genuinely missing, `property_setter.json`: 16 — new, `client_script.json`/`page.json`/`workspace.json`/`workspace_sidebar.json`: unchanged record counts under the new filters). `git diff` confirmed clean beyond the intended additions — only the expected `is_active`/`migration_hash`/`modified` churn already established as routine, harmless noise in this project. |
 | 1.93 | 2026-09-08 | KCSC | **Same root cause as `PROC_PORTAL_SPEC.md` v2.17, now found on a second code path**: the Forward-to-Purchase spawn (`material_request_hooks.py`'s `on_material_request_update()`) silently lost the requester's real rate too — worse than v2.17's case, since here the spawn's item-row dict never even copied `rate` from the source row in the first place (only `item_code`/`qty`/`schedule_date`/`warehouse`/`cost_center`), so it started at 0 before `MaterialRequest.on_update()`'s own `update_item_rates()` (the same unconditional-on-any-new-insert override documented in v2.17) even got a chance to run. **Fixed the same way as v2.17, not a second, different workaround**: `rate` is now copied into the spawned row's dict at construction, and each row's real rate/amount is reapplied via `item.db_set()` immediately after `new_doc.insert()` — the exact mechanism `update_item_rates()` itself uses. **Row-pairing verified rather than assumed safe**: the spawn's own list comprehension forwards every source row unconditionally (confirmed via source — no filter exists today), so a plain positional `zip()` would technically be safe, but the fix instead builds `item_rows` (for the new doc) and `source_rates` (for the reapply pass) from a single explicit loop over `doc.items`, so the two stay correctly paired by construction rather than by an assumption that could silently break if a filter is ever added to only one of the two lists later. **Live-tested the full real chain** (not the source document alone — that would only re-prove v2.17): created a source Material Request via the real `create_request()` API with `SKU001` at a deliberately different rate (5,000 vs. its real 400.0 list price), ran it through the actual role-gated approval chain to Forwarded to Purchase, and confirmed the **spawned** Purchase-type document's row carries `rate: 5000.0, amount: 15000.0` — not `400.0`/`1200.0`, what price-list re-derivation would have produced. `get_budget_preview_for_document()` on the spawned document confirmed `this_request_amount: 15000.0` (3 × 5,000, the real rate) — the spawned document is what budget enforcement actually checks (the source's own Material Issue type never triggers `validate_budget()` at all), so this is the figure that has to be right. Both test documents cancelled/deleted after verification. **Standing note for any future document-creation path in this project**: whenever a new Material Request is built via `frappe.get_doc({...}).insert()` (not just the two paths fixed so far) with an explicit `rate` on any row, reapply that rate via `db_set()` immediately after insert — `MaterialRequest.on_update()`'s price-list override fires unconditionally on every first insert where a default Buying Price List exists, regardless of what was set on construction. |
@@ -288,7 +369,7 @@ The full purchase-branch path was tested end-to-end against real Frappe permissi
 | 0.2 | 2026-08-06 | KCSC | Received the relocated cross-app architecture content (App Boundary & Ownership, OOB-vs-Custom Decision Log, Notifications Master List) from SUPPLIER_PORTAL_SPEC.md Sections 16-18, now living in this repo as PROC_SUITE_ARCHITECTURE.md. Updated Section 1.2 and Section 3 accordingly. |
 | 0.1 | 2026-08-03 | KCSC | App scaffolded as `karama_proc`, then renamed to `proc_app` (App Title: KCSC Proc) before any real content was added. Spec file created/renamed to PROC_APP_SPEC.md accordingly. No functional content yet. |
 
-## 6. Deployment Procedure
+## 7. Deployment Procedure
 
 **Verified 2026-09-08 against a genuinely fresh site** (`deploytest.local`, created for exactly this purpose and deliberately kept around for verifying future fixture changes) — not reasoned about, actually installed end to end and inventoried. The correct, minimal command sequence for installing this project on any fresh site:
 
