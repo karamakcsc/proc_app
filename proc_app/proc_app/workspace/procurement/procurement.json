@@ -2,12 +2,12 @@
  "app": "proc_app",
  "charts": [],
  "content": "[{\"id\": \"pcCardBreak1\", \"type\": \"card\", \"data\": {\"card_name\": \"Procurement\", \"col\": 6}}, {\"id\": \"pcCardBreak2\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}]",
- "creation": "2026-09-05 22:18:57.775790",
+ "creation": "2026-09-07 23:45:23.376024",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
  "hide_custom": 0,
- "icon": "buying",
+ "icon": "kcsc-procurement",
  "idx": 0,
  "indicator_color": "green",
  "is_hidden": 0,
@@ -195,7 +195,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-05 22:46:09.701570",
+ "modified": "2026-09-09 00:46:06.925336",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",

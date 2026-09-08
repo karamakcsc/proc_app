@@ -4,7 +4,7 @@
   "docstatus": 0,
   "doctype": "Workspace Sidebar",
   "for_user": null,
-  "header_icon": "buying",
+  "header_icon": "kcsc-procurement",
   "items": [
    {
     "child": 0,
@@ -295,7 +295,7 @@
     "url": null
    }
   ],
-  "modified": "2026-09-05 22:56:58.806739",
+  "modified": "2026-09-09 00:47:23.205630",
   "module": "Proc App",
   "module_onboarding": null,
   "name": "Procurement",

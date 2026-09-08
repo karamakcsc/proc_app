@@ -1,9 +1,9 @@
 {
  "app": "proc_app",
- "creation": "2026-09-05 22:46:55.771828",
+ "creation": "2026-09-07 23:45:23.649592",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "buying",
+ "header_icon": "kcsc-procurement",
  "idx": 0,
  "items": [
   {
@@ -216,7 +216,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-05 22:56:58.806739",
+ "modified": "2026-09-09 00:47:23.205630",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",

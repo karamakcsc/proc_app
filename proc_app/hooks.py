@@ -5,6 +5,13 @@ app_description = "Reusable back-office procurement system — Purchase Requisit
 app_email = "info@kcsc.jo"
 app_license = "mit"
 
+# List form, not a bare string -- matches how frappe/erpnext both declare
+# this hook (frappe/hooks.py, erpnext/hooks.py), confirmed by reading both
+# before writing this rather than following a single suggested example.
+app_include_icons = [
+	"/assets/proc_app/icons/proc_icons.svg",
+]
+
 after_migrate = "proc_app.setup.after_migrate"
 
 fixtures = [

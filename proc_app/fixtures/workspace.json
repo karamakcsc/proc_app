@@ -9,7 +9,7 @@
   "external_link": null,
   "for_user": null,
   "hide_custom": 0,
-  "icon": "buying",
+  "icon": "kcsc-procurement",
   "indicator_color": "green",
   "is_hidden": 0,
   "label": "Procurement",
@@ -287,7 +287,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2026-09-05 22:46:09.701570",
+  "modified": "2026-09-09 00:46:06.925336",
   "module": "Proc App",
   "name": "Procurement",
   "number_cards": [],
