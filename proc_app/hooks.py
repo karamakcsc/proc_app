@@ -62,10 +62,25 @@ fixtures = [
 	# "Stock" by Frappe's own report-module inference. A module filter would
 	# silently drop 3 of 5 real reports.
 	{"dt": "Report", "filters": [["name", "in", ["Purchase Requisition Status", "Items Below Reorder Level", "Physical Count Variance", "RFQ Comparison - By Proposal", "Budget Utilisation"]]]},
-	# Page/Workspace/Workspace Sidebar all reliably carry module="Proc App"
-	# (confirmed live: exact same record set as the old name lists, nothing
-	# foreign) -- switched for the same self-maintaining reasoning as DocType.
-	{"dt": "Page", "filters": [["module", "=", "Proc App"]]},
+	# Page fixture entry REMOVED entirely (found via a real fresh-site install
+	# test, 2026-09-08): Page.validate() (frappe/core/doctype/page/page.py)
+	# unconditionally throws "Not in Developer Mode" for a new Page record
+	# outside developer mode, with NO exemption for frappe.flags.in_import/
+	# in_migrate/in_patch at all -- unlike every other fixture-tracked doctype
+	# here (Report/Workspace/Workspace Sidebar/Desktop Icon all either exempt
+	# in_import explicitly or only gate an optional side-effect, never throw;
+	# DocType's own guard is bypassed by custom=1). Because
+	# frappe.utils.fixtures.import_fixtures() only catches ImportError/
+	# DoesNotExistError per file, this ValidationError aborted the ENTIRE
+	# fixture import for every file sorting after "page.json" alphabetically
+	# (property_setter, report, role, workflow*, workspace*) on every single
+	# fresh install AND every subsequent migrate -- confirmed by directly
+	# installing all three apps on a throwaway site. Both Pages this entry
+	# covered (rfq-comparison, procurement-dash) are already file-based
+	# (confirmed: both have their own .json+.js under
+	# proc_app/proc_app/page/) and sync automatically via
+	# frappe.model.sync.sync_all(), independent of fixtures entirely -- this
+	# entry was pure, actively-dangerous redundancy, not a real requirement.
 	{"dt": "Workspace", "filters": [["module", "=", "Proc App"]]},
 	{"dt": "Workspace Sidebar", "filters": [["module", "=", "Proc App"]]},
 	{"dt": "Desktop Icon", "filters": [["link_to", "=", "Procurement"]]},
