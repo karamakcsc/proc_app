@@ -66,18 +66,18 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-08-08 01:01:23.342016",
-  "name": "Pending Procurement Approval",
+  "modified": "2026-08-08 01:03:22.531692",
+  "name": "Draft",
   "style": "",
-  "workflow_state_name": "Pending Procurement Approval"
+  "workflow_state_name": "Draft"
  },
  {
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-08-08 01:03:22.531692",
-  "name": "Draft",
+  "modified": "2026-08-08 01:01:23.342016",
+  "name": "Pending Procurement Approval",
   "style": "",
-  "workflow_state_name": "Draft"
+  "workflow_state_name": "Pending Procurement Approval"
  }
 ]

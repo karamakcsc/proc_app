@@ -8,31 +8,88 @@ app_license = "mit"
 after_migrate = "proc_app.setup.after_migrate"
 
 fixtures = [
-	{"dt": "DocType", "filters": [["name", "in", ["Purchase Order Amendment", "RFQ Comparison Sheet", "RFQ Comparison Sheet Item"]]]},
-	{"dt": "Custom Field", "filters": [["name", "in", [
-		"Material Request-workflow_state", "Request for Quotation-workflow_state", "Department-department_manager",
-		"Supplier-portal_onboarding_status", "Department-department_officer", "Purchase Invoice-contract",
-		"Supplier-commercial_registration_no", "Department-default_warehouse", "Purchase Order-contract",
-		"Supplier-onboarding_submitted_on", "Supplier-onboarding_reviewed_by", "Material Request-requesting_department",
-		"Request for Quotation-price_weight", "Material Request-concerned_department", "Request for Quotation-lead_time_weight",
-		"Material Request-source_material_request", "Contract-contract_value", "Contract-contract_category",
-		"Contract-renewed_from", "Contract-auto_renew", "Contract-workflow_state", "Contract-termination_date",
-		"Contract-termination_reason", "Contract-terminated_by", "Purchase Order-supplier_acknowledged",
-		"Purchase Order-supplier_acknowledged_on", "Purchase Order-supplier_acknowledgment_note",
-		"Material Request-set_cost_center", "Material Request-budget_preview_html", "Material Request-budget_tab",
-		"Purchase Order-budget_tab", "Purchase Order-budget_preview_html",
-		"Purchase Invoice-budget_tab", "Purchase Invoice-budget_preview_html",
-	]]]},
+	# module="Proc App" alone would ALSO capture Supplier ASN/Supplier ASN
+	# Item/Supplier Invoice Dispute -- those are file-based doctypes (their
+	# own .json lives in proc_app/proc_app/doctype/) that already sync
+	# automatically via frappe.model.sync.sync_all(), confirmed to run BEFORE
+	# sync_fixtures() in migrate's own order (frappe/migrate.py) -- fixture-
+	# tracking them too would let a stale fixture snapshot silently overwrite
+	# a newer file-based doctype edit on every future migrate. Excluded
+	# explicitly so this fixture stays scoped to what it's actually for: the
+	# 3 doctypes that exist ONLY as database records with no file backing at
+	# all, where module-based filtering is still a genuine, self-maintaining
+	# improvement over the old 3-name list for any FUTURE database-only
+	# doctype.
+	{"dt": "DocType", "filters": [
+		["module", "=", "Proc App"],
+		["name", "not in", ["Supplier ASN", "Supplier ASN Item", "Supplier Invoice Dispute"]],
+	]},
+	# dt IN [...] captures every field on the doctypes we actually customise,
+	# self-maintaining for future fields on the same doctypes (confirmed live:
+	# module is None for the great majority of these, so filtering by module
+	# instead would silently drop most of them -- dt is the only reliable
+	# axis). One explicit exclusion: "Purchase Order-workflow_state" is NOT
+	# ours -- it was auto-created by an unrelated demo Workflow ("PO WF",
+	# 2026-09-02) that is not part of this project and must not ship to a
+	# fresh install (see PROC_APP_SPEC.md's Contract-workflow-conflict entry
+	# for the same class of issue on a different doctype).
+	{"dt": "Custom Field", "filters": [
+		["dt", "in", ["Material Request", "Request for Quotation", "Department", "Supplier", "Purchase Invoice", "Purchase Order", "Contract"]],
+		["name", "not in", ["Purchase Order-workflow_state"]],
+	]},
+	# No `module` field on Role at all -- name list is the only option, and
+	# roles are few and stable enough that this is a non-issue in practice.
 	{"dt": "Role", "filters": [["role_name", "in", ["Department Manager", "Department Officer", "Department User", "Procurement Officer"]]]},
+	# Workflow State / Workflow Action Master have no document_type field --
+	# confirmed via get_meta(), not assumed -- they're generic, site-wide
+	# label vocabularies shared across every workflow, not scoped to any one
+	# doctype. Filtering by document_type is structurally not possible here;
+	# name list is the only mechanism, same reasoning as Role above.
 	{"dt": "Workflow State", "filters": [["name", "in", ["Draft", "Pending Requesting-Dept Approval", "Pending Concerned-Dept Review", "Approved - Issue", "Pending Concerned-Dept Manager Approval", "Pending Procurement Approval", "Approved - Purchase", "Pending Approval", "Terminated"]]]},
 	{"dt": "Workflow Action Master", "filters": [["name", "in", ["Submit", "Approve - Issue from Stock", "Approve - Forward to Purchase", "Terminate"]]]},
+	# Workflow is DELIBERATELY kept as an explicit name list, not filtered by
+	# document_type -- this is the one case where a broader filter would be
+	# actively dangerous, not just imprecise. This project has twice found a
+	# throwaway demo Workflow silently active on a doctype we own (Contract,
+	# 2026-09-06; Purchase Order/"PO WF", 2026-09-02) -- a document_type-based
+	# filter would auto-sweep any FUTURE demo workflow on these same doctypes
+	# straight into the fixture and ship it to production. The explicit list
+	# forces a deliberate decision to add each real workflow by name.
 	{"dt": "Workflow", "filters": [["name", "in", ["Material Request Approval", "Purchase Order Amendment Approval", "RFQ Approval", "Comparison Sheet Approval", "Contract Approval"]]]},
+	# Report is DELIBERATELY kept as a name list, not module="Proc App" --
+	# confirmed live that only 2 of our 5 real reports carry that module;
+	# the other 3 (raw-SQL, non-script reports) are filed under "Buying"/
+	# "Stock" by Frappe's own report-module inference. A module filter would
+	# silently drop 3 of 5 real reports.
 	{"dt": "Report", "filters": [["name", "in", ["Purchase Requisition Status", "Items Below Reorder Level", "Physical Count Variance", "RFQ Comparison - By Proposal", "Budget Utilisation"]]]},
-	{"dt": "Page", "filters": [["name", "in", ["rfq-comparison", "procurement-dash"]]]},
-	{"dt": "Workspace", "filters": [["name", "in", ["Procurement"]]]},
-	{"dt": "Workspace Sidebar", "filters": [["name", "in", ["Procurement"]]]},
+	# Page/Workspace/Workspace Sidebar all reliably carry module="Proc App"
+	# (confirmed live: exact same record set as the old name lists, nothing
+	# foreign) -- switched for the same self-maintaining reasoning as DocType.
+	{"dt": "Page", "filters": [["module", "=", "Proc App"]]},
+	{"dt": "Workspace", "filters": [["module", "=", "Proc App"]]},
+	{"dt": "Workspace Sidebar", "filters": [["module", "=", "Proc App"]]},
 	{"dt": "Desktop Icon", "filters": [["link_to", "=", "Procurement"]]},
-	{"dt": "Client Script", "filters": [["name", "in", ["RFQ Comparison Sheet Item Supplier Ellipsis", "Request for Quotation Desk Buttons", "Supplier Quotation Lead Time Auto-Calc", "Supplier ASN Create Purchase Receipt Button", "Contract Desk Buttons", "Material Request Set Cost Center", "Material Request Department Company Filter", "Purchase Order Budget Impact", "Purchase Invoice Budget Impact"]]]},
+	# dt IN [...] captures exactly the same 9 Client Scripts as the old name
+	# list (confirmed live, nothing foreign on any of these doctypes) --
+	# self-maintaining for any future script on a doctype we already touch.
+	{"dt": "Client Script", "filters": [["dt", "in", ["RFQ Comparison Sheet", "Request for Quotation", "Supplier Quotation", "Supplier ASN", "Contract", "Material Request", "Purchase Order", "Purchase Invoice"]]]},
+	# NEW -- Property Setter was never fixture-tracked at all (2026-09-08
+	# deployment audit finding): Contract's own field_order (the doctype's
+	# entire field layout) and both custom doctypes' naming_series options
+	# are Property Setters, not Custom Fields, and would not have transferred
+	# to a fresh install. or_filters ORs the two conditions together: doc_type
+	# IN [...] is safe for doctypes we fully own (confirmed live -- zero of
+	# the site's other ~154 Property Setters carry any of these doc_types, so
+	# nothing foreign gets swept in); the 3 default_print_format setters live
+	# on shared, heavily ERPNext-customised doctypes (Purchase Order/Invoice,
+	# RFQ) where a doc_type-based filter would also catch a large amount of
+	# generic, non-project Property Setter noise (accounting_dimensions_section
+	# visibility, scan_barcode, rounded_total, etc.) -- named explicitly
+	# instead, the same reasoning as Report above.
+	{"dt": "Property Setter", "or_filters": [
+		["doc_type", "in", ["Contract", "Purchase Order Amendment", "RFQ Comparison Sheet", "RFQ Comparison Sheet Item", "Contract Fulfilment Checklist"]],
+		["name", "in", ["Request for Quotation-main-default_print_format", "Purchase Invoice-main-default_print_format", "Purchase Order-main-default_print_format"]],
+	]},
 ]
 
 doc_events = {
