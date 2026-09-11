@@ -112,6 +112,25 @@ fixtures = [
 		["doc_type", "in", ["Contract", "Purchase Order Amendment", "RFQ Comparison Sheet", "RFQ Comparison Sheet Item", "Contract Fulfilment Checklist"]],
 		["name", "in", ["Request for Quotation-main-default_print_format", "Purchase Invoice-main-default_print_format", "Purchase Order-main-default_print_format"]],
 	]},
+	# Six reviewed Arabic corrections to erpnext's own bundled ar.csv translations
+	# (desk-wide audit, PROC_APP_SPEC.md Changelog) -- overriding via the
+	# Translation doctype rather than editing erpnext's ar.csv directly, since
+	# that file is owned by erpnext and gets overwritten on bench update.
+	# Filtered by source_text (self-documenting here -- a reader can see
+	# exactly which six strings this covers without decoding an autoname) AND
+	# language="ar", explicitly, not by module or a broader marker, since
+	# Translation has no module field of its own to scope on. contributed=0
+	# is deliberate, not incidental: Translation also supports a
+	# community-contribution workflow (contributed/contribution_status
+	# fields) for the exact same source_text+language pair -- excluding
+	# contributed=1 means a future contributed translation for e.g. "Amount"
+	# never gets silently swept into this fixture and shipped as if it were
+	# one of these six reviewed corrections.
+	{"dt": "Translation", "filters": [
+		["language", "=", "ar"],
+		["source_text", "in", ["Amount", "Draft", "Signee", "Paid From Account Type", "Paid To Account Type", "Party User"]],
+		["contributed", "=", 0],
+	]},
 ]
 
 doc_events = {

@@ -1,0 +1,80 @@
+[
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.507789",
+  "name": "mg4rlm3hcl",
+  "source_text": "Amount",
+  "translated_text": "المبلغ"
+ },
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.681945",
+  "name": "mg4l3tujg7",
+  "source_text": "Draft",
+  "translated_text": "مسودة"
+ },
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.687200",
+  "name": "mg4pjca4f7",
+  "source_text": "Signee",
+  "translated_text": "المُوقِّع"
+ },
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.691344",
+  "name": "mg4khlmfke",
+  "source_text": "Paid From Account Type",
+  "translated_text": "نوع الحساب المدفوع منه"
+ },
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.696849",
+  "name": "mg4ttojsst",
+  "source_text": "Paid To Account Type",
+  "translated_text": "نوع الحساب المدفوع إليه"
+ },
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 16:03:47.701377",
+  "name": "mg5kdj2chq",
+  "source_text": "Party User",
+  "translated_text": "مستخدم الطرف"
+ }
+]
