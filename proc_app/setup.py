@@ -26,6 +26,7 @@ def after_migrate():
 	setup_po_generation_permissions()
 	setup_contract_permissions()
 	setup_asn_grn_permissions()
+	setup_master_data_permissions()
 
 
 def setup_material_request_permissions():
@@ -497,4 +498,91 @@ def setup_asn_grn_permissions():
 	frappe.clear_cache()
 	frappe.logger().info(
 		"KCSC Proc: Supplier ASN read + Purchase Receipt read/create configured for Procurement Officer."
+	)
+
+
+# (role always "Procurement Officer" -- this is deliberately NOT added to
+# SUPPORTING_DOCTYPES/SUPPORTING_ROLES above, since that grants all 4
+# supporting roles uniformly and this decision is scoped to Procurement
+# Officer alone)
+MASTER_DATA_READ_WRITE_CREATE = [
+	"Item", "Item Group", "Brand", "UOM", "Product Bundle", "Manufacturer",
+	"Supplier", "Supplier Group", "Supplier Scorecard", "Contact", "Address",
+	"Terms and Conditions", "Contract Template", "Incoterm", "Shipping Rule",
+]
+
+MASTER_DATA_READ_ONLY = [
+	"Company", "Cost Center", "Account", "Currency", "Price List", "Fiscal Year",
+	"Mode of Payment", "Bank Account", "Purchase Taxes and Charges Template",
+	"Tax Category", "Tax Withholding Category", "Tax Withholding Group",
+	"Item Tax Template", "Warehouse", "Location", "Department", "Email Template",
+]
+
+
+def setup_master_data_permissions():
+	"""The Setup workspace page (PROC_APP_SPEC.md Section 2.12) links all 36
+	master doctypes a procurement user touches, but Procurement Officer only
+	had Custom DocPerm grants on 14 of them (read-only, via
+	SUPPORTING_DOCTYPES/setup_supporting_doctype_permissions() above, which
+	is shared with the other 3 supporting roles) -- most of the new page was
+	invisible, not broken (Frappe's own workspace rendering correctly hides
+	a card/link the viewing user can't read), but not genuinely usable.
+
+	Decision (Yasser, bank context, 2026-09-12): split by who actually owns
+	the doctype, not by what's technically already reachable. Procurement
+	genuinely owns and maintains MASTER_DATA_READ_WRITE_CREATE (item/supplier
+	masters, plus the terms/contract/shipping templates procurement authors
+	itself) -- read+write+create. MASTER_DATA_READ_ONLY is finance/IT-owned
+	(company, accounts, tax, warehouse/location, department, email
+	templates) -- procurement needs visibility to fill out its own
+	documents correctly (e.g. picking a Cost Center or Warehouse), not
+	control over the record itself. Buying/Stock/Accounts Settings
+	deliberately get no grant at all -- site-wide configuration, no
+	procurement-specific reason to touch it from this role.
+
+	No `submit` anywhere in either list: none of these 36 are submittable
+	doctypes. No `delete` anywhere either, deliberately: a Procurement
+	Officer deleting an Item or Supplier already used in historical
+	Material Requests/POs/Invoices is a real, avoidable risk, not something
+	this role needs for its own job -- `update_permission_property()` below
+	only ever sets read/write/create, so delete stays at Custom DocPerm's
+	own default (0), the same way every other function in this file already
+	leaves it untouched rather than explicitly zeroing it.
+
+	Checked before writing any of this (2026-09-12): none of the 14
+	pre-existing grants were broader than this decision (all 14 were already
+	read-only, matching or narrower than what's decided here for each), so
+	nothing here downgrades anything -- every doctype below either gains a
+	fresh grant or gets upgraded from read-only to read+write+create,
+	never the reverse."""
+	role = "Procurement Officer"
+
+	if not frappe.db.exists("Role", role):
+		frappe.logger().warning(f"setup_master_data_permissions: Role '{role}' not found, skipping")
+		return
+
+	for doctype in MASTER_DATA_READ_WRITE_CREATE:
+		if not frappe.db.exists("DocType", doctype):
+			frappe.logger().warning(f"setup_master_data_permissions: DocType '{doctype}' not found, skipping")
+			continue
+
+		frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+		add_permission(doctype, role, permlevel=0)
+		for ptype, value in [("read", 1), ("write", 1), ("create", 1)]:
+			update_permission_property(doctype, role, 0, ptype, value)
+
+	for doctype in MASTER_DATA_READ_ONLY:
+		if not frappe.db.exists("DocType", doctype):
+			frappe.logger().warning(f"setup_master_data_permissions: DocType '{doctype}' not found, skipping")
+			continue
+
+		frappe.db.delete("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
+		add_permission(doctype, role, permlevel=0)
+		update_permission_property(doctype, role, 0, "read", 1)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	frappe.logger().info(
+		"KCSC Proc: Setup-page master data DocPerm configured for Procurement Officer "
+		f"({len(MASTER_DATA_READ_WRITE_CREATE)} read/write/create, {len(MASTER_DATA_READ_ONLY)} read-only)."
 	)
