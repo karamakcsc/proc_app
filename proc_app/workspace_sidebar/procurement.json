@@ -1,6 +1,6 @@
 {
  "app": "proc_app",
- "creation": "2026-09-07 23:45:23.649592",
+ "creation": "2026-09-12 02:03:57.449665",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "kcsc-procurement",
@@ -9,10 +9,10 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "home",
+   "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Home",
+   "label": "Setup",
    "link_to": "Procurement",
    "link_type": "Workspace",
    "show_arrow": 0,
@@ -216,7 +216,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-09 00:47:23.205630",
+ "modified": "2026-09-12 02:26:42.570475",
  "modified_by": "Administrator",
  "module": "Proc App",
  "name": "Procurement",
