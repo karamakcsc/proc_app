@@ -5614,5 +5614,83 @@
   "name": "s14v7qhsp9",
   "source_text": "Reference Document Type",
   "translated_text": "نوع المستند المرجعي"
+ },
+ {
+  "context": "Purchase Invoice",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:08.907538",
+  "name": "b8phit396j",
+  "source_text": "Address",
+  "translated_text": "عنوان المورد"
+ },
+ {
+  "context": "Purchase Receipt",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:09.339307",
+  "name": "b8tekino42",
+  "source_text": "Address",
+  "translated_text": "عنوان المورد"
+ },
+ {
+  "context": "Supplier Quotation",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:09.344910",
+  "name": "b8th71k4d2",
+  "source_text": "Address",
+  "translated_text": "عنوان المورد"
+ },
+ {
+  "context": "Purchase Invoice",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:09.348852",
+  "name": "b8tirn333v",
+  "source_text": "Contact",
+  "translated_text": "معلومات الاتصال"
+ },
+ {
+  "context": "Purchase Receipt",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:09.351662",
+  "name": "b8tem8kuhh",
+  "source_text": "Contact",
+  "translated_text": "معلومات الاتصال"
+ },
+ {
+  "context": "Supplier Quotation",
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": "",
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "ar",
+  "modified": "2026-09-11 23:56:09.354558",
+  "name": "b8tm11np5h",
+  "source_text": "Contact",
+  "translated_text": "معلومات الاتصال"
  }
 ]
